@@ -1,0 +1,273 @@
+---
+title: "Climbing in Paris"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# Data processing with R
+
+## Study area preparation : 10 km around Paris
+
+A bounding box of 10 km around Paris (map bounding box). Considering the fact that we are interested here by the accessibility to climbing clubs, a bounding box of 15 km around Paris is also created
+
+IRIS data is imported, Paris is extracted, a buffer of 10km is created to identify the bounding box.
+
+```{r}
+library(sf)
+
+# Source : IGN
+iris <- st_read("CONTOURS-IRIS.shp", quiet = TRUE)
+
+# Extract Paris
+# Département
+iris$dep <- substr(iris$INSEE_COM, 1, 2)
+paris <- iris[iris$dep == "75",]
+paris <- paris[!paris$NOM_IRIS %in% c("Bois de Vincennes 1",
+                                      "Bois de Vincennes 2",
+                                      "Bois de Boulogne 1",
+                                      "Bois de Boulogne 2",
+                                      "Bois de Boulogne 3"),]
+
+# Delete Bois-de-Vincennes / Boulogne Iris
+paris <- st_union(paris)
+
+# 5 km around Paris map layout
+paris5k <- st_buffer(paris, 5000)
+paris5k <- st_as_sfc(st_bbox(paris5k, crs = 2154))
+
+# 10 km around Paris (get OSM data) in long/lat
+paris10k <- st_buffer(paris, 10000)
+paris10k <- st_transform(paris10k, 4326)
+paris10k <- st_bbox(paris10k) 
+paris10k <- as.vector(paris10k)
+
+# Intersection with IRIS
+iris <- st_intersection(iris, paris5k)
+
+# Communes aggregation (layout)
+com <- aggregate(iris[,c("INSEE_COM", "NOM_COM")],
+                 by = list(iris$INSEE_COM),
+                 FUN = head, 1)
+
+# Study area presentation
+plot(st_geometry(st_buffer(paris, 10000)), col = "lightgrey", border = NA)
+plot(st_geometry(iris), col = "peachpuff", border = "white", lwd = .2, add = TRUE)
+plot(st_geometry(com), col = NA, border = "black", lwd = .5, add = TRUE)
+```
+
+Data is enriched by socio-economic data (disposible income) for further analysis. We keep only "Habitation" IRIS for origins-destination calculation.
+
+```{r}
+library(readxl)
+# Import INSEE data
+df <- read_xlsx("data-raw/BASE_TD_FILO_DISP_IRIS_2019.xlsx", skip = 5, sheet = "IRIS_DISP")
+iris <- merge(iris[,c("CODE_IRIS", "NOM_IRIS", "TYP_IRIS")], df[,c("IRIS", "DISP_MED19")],
+              by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
+
+# Keep only habitation IRIS for origins calculation
+ori <- iris[iris$TYP_IRIS == "H",]
+ori <- st_centroid(ori)
+```
+
+Data is transformed in latitude/longitude for origin-destination calculations and implementation in Observable.
+
+```{r}
+# Consolidated data
+ori <- st_transform(ori, crs = 4326)
+iris <- st_transform(iris, crs = 4326)
+com <- st_transform(com, crs = 4326)
+```
+
+## Import OSM data with R
+
+Data is imported from OpenStreetMap. We can argue that the accuracy of the data is quite good, since missing points have been added to the OpenStreetMap database with my personal knowledge of this sport activity in Paris and its surroundings.
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library(osmdata)
+
+# define a bounding box
+q0 <- opq(bbox = paris10k) 
+
+# extract climbing areas
+q <- add_osm_feature(opq = q0, key = 'sport', value = "climbing")
+res <- osmdata_sf(q)
+poi <- res$osm_points
+
+# Manage private and associative areas
+private <- poi[!is.na(poi$brand),]
+asso <- poi[!is.na(poi$federation),]
+
+asso$type <- "Associative structure"
+private$type <- "Speculative structure"
+poi <- rbind(asso, private)
+
+
+cols <- c("osm_id", "name", "climbing.toprope", "climbing.boulder", "climbing.length",
+          "climbing.routes", "type", "federation", "brand")
+
+poi <- poi[,cols]
+```
+
+## Time distance to the nearest climbing area by bike
+
+\[osrm default bicycle profile\](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/bicycle.lua)
+
+bicycle parameters on \[OSRM\](https://github.com/camptocamp/provelobern_bicyclerouteplanner/wiki/Profiles)
+
+add slope to the calculation : https://www.liedman.net/2015/04/13/add-elevation-data-to-osrm/
+
+mapbox solution : https://blog.mapbox.com/elevation-aware-routing-profiles-in-mapbox-directions-21e182a85165
+
+```{r}
+library(osrm)
+options(osrm.server = "http://188.166.36.154:5000/", osrm.profile = "bike")
+
+# Manage ids
+row.names(ori) <- ori$CODE_IRIS
+
+# Whatever the structure
+bike_all <- osrmTable(src = ori, dst = poi, 
+                      measure = "duration")
+xx <- bike_all$duration
+
+# Name of the nearest structure
+osm_id <- colnames(xx)[apply(xx, 1, which.min)] # Name
+osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
+osm_id$iris <- row.names(xx)
+osm_id <- merge(osm_id, poi[,c("osm_id", "name", "type")], 
+                by = "osm_id", all.x = TRUE)
+osm_id <- st_set_geometry(osm_id, NULL)
+
+# Time to the nearest climbing area
+time <- apply(xx, 1, min) # Time
+time <- data.frame(time, stringsAsFactors = FALSE)
+time$iris <- row.names(time)
+osm_id <- merge(osm_id, time, by = "iris", all.x = TRUE)
+
+# Number of climbing area at less than 10 minutes by bike
+n10mn <- xx
+n10mn <- data.frame(xx, stringsAsFactors = FALSE)
+n10mn[n10mn < 10] <- 1
+n10mn[n10mn > 10] <- 0
+n10mn$N <- rowSums(n10mn)
+n10mn$iris <- row.names(n10mn)
+osm_id <- merge(osm_id, n10mn[,c("iris", "N")], by = "iris",
+                all.x = TRUE)
+
+osm_id <- osm_id[,c(1,3:4, 6:7)]
+colnames(osm_id) <- c("CODE_IRIS", "ALL_NAME", "TYPE", "ALL_TIME", "ALL_10MN")
+iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
+
+
+
+# Prive climbing club (fees $$$)
+poi_priv <- poi[poi$type == "Speculative structure",] 
+
+bike_priv <- osrmTable(src = ori, dst = poi_priv, 
+                      measure = "duration")
+xx <- bike_priv$duration
+
+# Name of the nearest structure
+osm_id <- colnames(xx)[apply(xx, 1, which.min)] # Name
+osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
+osm_id$iris <- row.names(xx)
+osm_id <- merge(osm_id, poi[,c("osm_id", "name", "type")], 
+                by = "osm_id", all.x = TRUE)
+
+# Time to the nearest climbing area
+time <- apply(xx, 1, min) # Time
+time <- data.frame(time, stringsAsFactors = FALSE)
+time$iris <- row.names(time)
+osm_id <- merge(osm_id, time, by = "iris", all.x = TRUE)
+
+# Number of climbing area at less than 10 minutes by bike
+n10mn <- xx
+n10mn <- data.frame(xx, stringsAsFactors = FALSE)
+n10mn[n10mn < 10] <- 1
+n10mn[n10mn > 10] <- 0
+n10mn$N <- rowSums(n10mn)
+n10mn$iris <- row.names(n10mn)
+osm_id <- merge(osm_id, n10mn[,c("iris", "N")], by = "iris",
+                all.x = TRUE)
+osm_id <- osm_id[,c(1,3, 6:7)]
+colnames(osm_id) <- c("CODE_IRIS", "PRIV_NAME", "PRIV_TIME", "PRIV_10MN")
+iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
+  
+
+# Associative structure - FFME
+poi_asso <-poi[poi$type == "Associative structure",] 
+poi_ffme <- poi_asso[poi_asso$federation == "FFME",]
+
+bike_ffme <- osrmTable(src = ori, dst = poi_ffme, 
+                      measure = "duration")
+xx <- bike_ffme$duration
+
+# Name of the nearest structure
+osm_id <- colnames(xx)[apply(xx, 1, which.min)] # Name
+osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
+osm_id$iris <- row.names(xx)
+osm_id <- merge(osm_id, poi[,c("osm_id", "name", "type")], 
+                by = "osm_id", all.x = TRUE)
+
+# Time to the nearest climbing area
+time <- apply(xx, 1, min) # Time
+time <- data.frame(time, stringsAsFactors = FALSE)
+time$iris <- row.names(time)
+osm_id <- merge(osm_id, time, by = "iris", all.x = TRUE)
+
+# Number of climbing area at less than 10 minutes by bike
+n10mn <- xx
+n10mn <- data.frame(xx, stringsAsFactors = FALSE)
+n10mn[n10mn < 10] <- 1
+n10mn[n10mn > 10] <- 0
+n10mn$N <- rowSums(n10mn)
+n10mn$iris <- row.names(n10mn)
+osm_id <- merge(osm_id, n10mn[,c("iris", "N")], by = "iris",
+                all.x = TRUE)
+osm_id <- osm_id[,c(1,3, 6:7)]
+colnames(osm_id) <- c("CODE_IRIS", "FFME_NAME", "FFME_TIME", "FFME_10MN")
+iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
+
+# Associative structure - FSGT
+poi_fsgt <- poi_asso[poi_asso$federation == "FSGT",]
+
+bike_fsgt <- osrmTable(src = ori, dst = poi_fsgt, 
+                      measure = "duration")
+xx <- bike_fsgt$duration
+
+# Name of the nearest structure
+osm_id <- colnames(xx)[apply(xx, 1, which.min)] # Name
+osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
+osm_id$iris <- row.names(xx)
+osm_id <- merge(osm_id, poi[,c("osm_id", "name", "type")], 
+                by = "osm_id", all.x = TRUE)
+
+# Time to the nearest climbing area
+time <- apply(xx, 1, min) # Time
+time <- data.frame(time, stringsAsFactors = FALSE)
+time$iris <- row.names(time)
+osm_id <- merge(osm_id, time, by = "iris", all.x = TRUE)
+
+# Number of climbing area at less than 10 minutes by bike
+n10mn <- xx
+n10mn <- data.frame(xx, stringsAsFactors = FALSE)
+n10mn[n10mn < 10] <- 1
+n10mn[n10mn > 10] <- 0
+n10mn$N <- rowSums(n10mn)
+n10mn$iris <- row.names(n10mn)
+osm_id <- merge(osm_id, n10mn[,c("iris", "N")], by = "iris",
+                all.x = TRUE)
+osm_id <- osm_id[,c(1,3, 6:7)]
+colnames(osm_id) <- c("CODE_IRIS", "FSGT_NAME", "FSGT_TIME", "FSGT_10MN")
+iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
+
+
+# A function to display results in this iris dataframe
+st_write(iris, "data-conso/iris.geojson")
+st_write(com, "data-conso/com.geojson")
+st_write(poi, "data-conso/poi.geojson")
+```
