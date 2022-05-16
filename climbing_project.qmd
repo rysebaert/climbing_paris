@@ -109,7 +109,7 @@ poi <- rbind(asso, private)
 cols <- c("osm_id", "name", "climbing.toprope", "climbing.boulder", "climbing.length",
           "climbing.routes", "type", "federation", "brand")
 
-poi <- poi[,cols]
+poi$federation[is.na(poi$federation)] <- "Priv"
 ```
 
 ## Time distance to the nearest climbing area by bike
