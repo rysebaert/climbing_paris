@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.393">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Climbing in Paris</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<script src="climbing_project_files/libs/clipboard/clipboard.min.js"></script>
+<script src="climbing_project_files/libs/quarto-html/quarto.js"></script>
+<script src="climbing_project_files/libs/quarto-html/popper.min.js"></script>
+<script src="climbing_project_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="climbing_project_files/libs/quarto-html/anchor.min.js"></script>
+<link href="climbing_project_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="climbing_project_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="climbing_project_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="climbing_project_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="climbing_project_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Climbing in Paris</h1>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<section id="data-processing-with-r" class="level1">
+<h1>Data processing with R</h1>
+<section id="study-area-preparation-10-km-around-paris" class="level2">
+<h2 class="anchored" data-anchor-id="study-area-preparation-10-km-around-paris">Study area preparation : 10 km around Paris</h2>
+<p>A bounding box of 10 km around Paris (map bounding box). Considering the fact that we are interested here by the accessibility to climbing clubs, a bounding box of 15 km around Paris is also created</p>
+<p>IRIS data is imported, Paris is extracted, a buffer of 10km is created to identify the bounding box.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Source : IGN</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">"data-raw/CONTOURS-IRIS.shp"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract Paris</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Département</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>iris<span class="sc">$</span>dep <span class="ot">&lt;-</span> <span class="fu">substr</span>(iris<span class="sc">$</span>INSEE_COM, <span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>paris <span class="ot">&lt;-</span> iris[iris<span class="sc">$</span>dep <span class="sc">==</span> <span class="st">"75"</span>,]</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>paris <span class="ot">&lt;-</span> paris[<span class="sc">!</span>paris<span class="sc">$</span>NOM_IRIS <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Bois de Vincennes 1"</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">"Bois de Vincennes 2"</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">"Bois de Boulogne 1"</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">"Bois de Boulogne 2"</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">"Bois de Boulogne 3"</span>),]</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Delete Bois-de-Vincennes / Boulogne Iris</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>paris <span class="ot">&lt;-</span> <span class="fu">st_union</span>(paris)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># 5 km around Paris map layout</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>paris5k <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(paris, <span class="dv">5000</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>paris5k <span class="ot">&lt;-</span> <span class="fu">st_as_sfc</span>(<span class="fu">st_bbox</span>(paris5k, <span class="at">crs =</span> <span class="dv">2154</span>))</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co"># 10 km around Paris (get OSM data) in long/lat</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>paris10k <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(paris, <span class="dv">10000</span>)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>paris10k <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(paris10k, <span class="dv">4326</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>paris10k <span class="ot">&lt;-</span> <span class="fu">st_bbox</span>(paris10k) </span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>paris10k <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(paris10k)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Intersection with IRIS</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(iris, paris5k)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Communes aggregation (layout)</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>com <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(iris[,<span class="fu">c</span>(<span class="st">"INSEE_COM"</span>, <span class="st">"NOM_COM"</span>)],</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>                 <span class="at">by =</span> <span class="fu">list</span>(iris<span class="sc">$</span>INSEE_COM),</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>                 <span class="at">FUN =</span> head, <span class="dv">1</span>)</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Study area presentation</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(<span class="fu">st_buffer</span>(paris, <span class="dv">10000</span>)), <span class="at">col =</span> <span class="st">"lightgrey"</span>, <span class="at">border =</span> <span class="cn">NA</span>)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(iris), <span class="at">col =</span> <span class="st">"peachpuff"</span>, <span class="at">border =</span> <span class="st">"white"</span>, <span class="at">lwd =</span> .<span class="dv">2</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(com), <span class="at">col =</span> <span class="cn">NA</span>, <span class="at">border =</span> <span class="st">"black"</span>, <span class="at">lwd =</span> .<span class="dv">5</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Data is enriched by socio-economic data (disposible income) for further analysis. We keep only “Habitation” IRIS for origins-destination calculation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(iris)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Import INSEE data</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(<span class="st">"data-raw/BASE_TD_FILO_DISP_IRIS_2019.xlsx"</span>, <span class="at">skip =</span> <span class="dv">5</span>, <span class="at">sheet =</span> <span class="st">"IRIS_DISP"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">merge</span>(iris[,<span class="fu">c</span>(<span class="st">"CODE_IRIS"</span>, <span class="st">"NOM_IRIS"</span>, <span class="st">"TYP_IRIS"</span>, <span class="st">"NOM_COM"</span>)], </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>              df[,<span class="fu">c</span>(<span class="st">"IRIS"</span>,<span class="st">"DISP_MED19"</span>)],</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">by.x =</span> <span class="st">"CODE_IRIS"</span>, <span class="at">by.y =</span> <span class="st">"IRIS"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only habitation IRIS for origins calculation</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>ori <span class="ot">&lt;-</span> iris[iris<span class="sc">$</span>TYP_IRIS <span class="sc">==</span> <span class="st">"H"</span>,]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>ori <span class="ot">&lt;-</span> <span class="fu">st_centroid</span>(ori)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Data is transformed in latitude/longitude for origin-destination calculations and implementation in Observable.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Consolidated data</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ori <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(ori, <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(iris, <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>com <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(com, <span class="at">crs =</span> <span class="dv">4326</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="import-osm-data-with-r" class="level2">
+<h2 class="anchored" data-anchor-id="import-osm-data-with-r">Import OSM data with R</h2>
+<p>Data is imported from OpenStreetMap. We can argue that the accuracy of the data is quite good, since missing points have been added to the OpenStreetMap database with my personal knowledge of this sport activity in Paris and its surroundings.</p>
+<p>When you click the <strong>Render</strong> button a document will be generated that includes both content and the output of embedded code. You can embed code like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(osmdata)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># define a bounding box</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>q0 <span class="ot">&lt;-</span> <span class="fu">opq</span>(<span class="at">bbox =</span> paris10k) </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># extract climbing areas</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>q <span class="ot">&lt;-</span> <span class="fu">add_osm_feature</span>(<span class="at">opq =</span> q0, <span class="at">key =</span> <span class="st">'sport'</span>, <span class="at">value =</span> <span class="st">"climbing"</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">osmdata_sf</span>(q)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>poi <span class="ot">&lt;-</span> res<span class="sc">$</span>osm_points</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Manage private and associative areas</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>private <span class="ot">&lt;-</span> poi[<span class="sc">!</span><span class="fu">is.na</span>(poi<span class="sc">$</span>brand),]</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>asso <span class="ot">&lt;-</span> poi[<span class="sc">!</span><span class="fu">is.na</span>(poi<span class="sc">$</span>federation),]</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>asso<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="st">"Associative structure"</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>private<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="st">"Speculative structure"</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>poi <span class="ot">&lt;-</span> <span class="fu">rbind</span>(asso, private)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"osm_id"</span>, <span class="st">"name"</span>, <span class="st">"climbing.toprope"</span>, <span class="st">"climbing.boulder"</span>, <span class="st">"climbing.length"</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>          <span class="st">"climbing.routes"</span>, <span class="st">"type"</span>, <span class="st">"federation"</span>, <span class="st">"brand"</span>)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>poi<span class="sc">$</span>federation[<span class="fu">is.na</span>(poi<span class="sc">$</span>federation)] <span class="ot">&lt;-</span> <span class="st">"Priv"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="time-distance-to-the-nearest-climbing-area-by-bike" class="level2">
+<h2 class="anchored" data-anchor-id="time-distance-to-the-nearest-climbing-area-by-bike">Time distance to the nearest climbing area by bike</h2>
+<p>[osrm default bicycle profile](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/bicycle.lua)</p>
+<p>bicycle parameters on [OSRM](https://github.com/camptocamp/provelobern_bicyclerouteplanner/wiki/Profiles)</p>
+<p>add slope to the calculation : https://www.liedman.net/2015/04/13/add-elevation-data-to-osrm/</p>
+<p>mapbox solution : https://blog.mapbox.com/elevation-aware-routing-profiles-in-mapbox-directions-21e182a85165</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(osrm)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">osrm.server =</span> <span class="st">"http://1xx.xxx.3x.1x4:5xx0/"</span>, <span class="at">osrm.profile =</span> <span class="st">"bike"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Manage ids</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(ori) <span class="ot">&lt;-</span> ori<span class="sc">$</span>CODE_IRIS</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Whatever the structure</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>bike_all <span class="ot">&lt;-</span> <span class="fu">osrmTable</span>(<span class="at">src =</span> ori, <span class="at">dst =</span> poi, </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                      <span class="at">measure =</span> <span class="st">"duration"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> bike_all<span class="sc">$</span>duration</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Name of the nearest structure</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">colnames</span>(xx)[<span class="fu">apply</span>(xx, <span class="dv">1</span>, which.min)] <span class="co"># Name</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(osm_id, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>osm_id<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(xx)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, poi[,<span class="fu">c</span>(<span class="st">"osm_id"</span>, <span class="st">"name"</span>, <span class="st">"type"</span>)], </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>                <span class="at">by =</span> <span class="st">"osm_id"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">st_set_geometry</span>(osm_id, <span class="cn">NULL</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Time to the nearest climbing area</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">apply</span>(xx, <span class="dv">1</span>, min) <span class="co"># Time</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(time, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>time<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(time)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, time, <span class="at">by =</span> <span class="st">"iris"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of climbing area at less than 10 minutes by bike</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> xx</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(xx, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&lt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&gt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>N <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n10mn)</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(n10mn)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, n10mn[,<span class="fu">c</span>(<span class="st">"iris"</span>, <span class="st">"N"</span>)], <span class="at">by =</span> <span class="st">"iris"</span>,</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>                <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> osm_id[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>, <span class="dv">6</span><span class="sc">:</span><span class="dv">7</span>)]</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(osm_id) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"CODE_IRIS"</span>, <span class="st">"ALL_NAME"</span>, <span class="st">"TYPE"</span>, <span class="st">"ALL_TIME"</span>, <span class="st">"ALL_10MN"</span>)</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">merge</span>(iris, osm_id, <span class="at">by =</span> <span class="st">"CODE_IRIS"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Prive climbing club (fees $$$)</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>poi_priv <span class="ot">&lt;-</span> poi[poi<span class="sc">$</span>type <span class="sc">==</span> <span class="st">"Speculative structure"</span>,] </span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>bike_priv <span class="ot">&lt;-</span> <span class="fu">osrmTable</span>(<span class="at">src =</span> ori, <span class="at">dst =</span> poi_priv, </span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>                      <span class="at">measure =</span> <span class="st">"duration"</span>)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> bike_priv<span class="sc">$</span>duration</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Name of the nearest structure</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">colnames</span>(xx)[<span class="fu">apply</span>(xx, <span class="dv">1</span>, which.min)] <span class="co"># Name</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(osm_id, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>osm_id<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(xx)</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, poi[,<span class="fu">c</span>(<span class="st">"osm_id"</span>, <span class="st">"name"</span>, <span class="st">"type"</span>)], </span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>                <span class="at">by =</span> <span class="st">"osm_id"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="co"># Time to the nearest climbing area</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">apply</span>(xx, <span class="dv">1</span>, min) <span class="co"># Time</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(time, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>time<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(time)</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, time, <span class="at">by =</span> <span class="st">"iris"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of climbing area at less than 10 minutes by bike</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> xx</span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(xx, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&lt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&gt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>N <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n10mn)</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(n10mn)</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, n10mn[,<span class="fu">c</span>(<span class="st">"iris"</span>, <span class="st">"N"</span>)], <span class="at">by =</span> <span class="st">"iris"</span>,</span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>                <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> osm_id[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>, <span class="dv">6</span><span class="sc">:</span><span class="dv">7</span>)]</span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(osm_id) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"CODE_IRIS"</span>, <span class="st">"PRIV_NAME"</span>, <span class="st">"PRIV_TIME"</span>, <span class="st">"PRIV_10MN"</span>)</span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">merge</span>(iris, osm_id, <span class="at">by =</span> <span class="st">"CODE_IRIS"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a><span class="co"># Associative structure - FFME</span></span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a>poi_asso <span class="ot">&lt;-</span>poi[poi<span class="sc">$</span>type <span class="sc">==</span> <span class="st">"Associative structure"</span>,] </span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>poi_ffme <span class="ot">&lt;-</span> poi_asso[poi_asso<span class="sc">$</span>federation <span class="sc">==</span> <span class="st">"FFME"</span>,]</span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a>bike_ffme <span class="ot">&lt;-</span> <span class="fu">osrmTable</span>(<span class="at">src =</span> ori, <span class="at">dst =</span> poi_ffme, </span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>                      <span class="at">measure =</span> <span class="st">"duration"</span>)</span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> bike_ffme<span class="sc">$</span>duration</span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Name of the nearest structure</span></span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">colnames</span>(xx)[<span class="fu">apply</span>(xx, <span class="dv">1</span>, which.min)] <span class="co"># Name</span></span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(osm_id, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a>osm_id<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(xx)</span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, poi[,<span class="fu">c</span>(<span class="st">"osm_id"</span>, <span class="st">"name"</span>, <span class="st">"type"</span>)], </span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a>                <span class="at">by =</span> <span class="st">"osm_id"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a><span class="co"># Time to the nearest climbing area</span></span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">apply</span>(xx, <span class="dv">1</span>, min) <span class="co"># Time</span></span>
+<span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(time, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>time<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(time)</span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, time, <span class="at">by =</span> <span class="st">"iris"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of climbing area at less than 10 minutes by bike</span></span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> xx</span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(xx, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&lt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&gt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>N <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n10mn)</span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(n10mn)</span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, n10mn[,<span class="fu">c</span>(<span class="st">"iris"</span>, <span class="st">"N"</span>)], <span class="at">by =</span> <span class="st">"iris"</span>,</span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>                <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> osm_id[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>, <span class="dv">6</span><span class="sc">:</span><span class="dv">7</span>)]</span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(osm_id) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"CODE_IRIS"</span>, <span class="st">"FFME_NAME"</span>, <span class="st">"FFME_TIME"</span>, <span class="st">"FFME_10MN"</span>)</span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">merge</span>(iris, osm_id, <span class="at">by =</span> <span class="st">"CODE_IRIS"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a><span class="co"># Associative structure - FSGT</span></span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>poi_fsgt <span class="ot">&lt;-</span> poi_asso[poi_asso<span class="sc">$</span>federation <span class="sc">==</span> <span class="st">"FSGT"</span>,]</span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>bike_fsgt <span class="ot">&lt;-</span> <span class="fu">osrmTable</span>(<span class="at">src =</span> ori, <span class="at">dst =</span> poi_fsgt, </span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a>                      <span class="at">measure =</span> <span class="st">"duration"</span>)</span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> bike_fsgt<span class="sc">$</span>duration</span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a><span class="co"># Name of the nearest structure</span></span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">colnames</span>(xx)[<span class="fu">apply</span>(xx, <span class="dv">1</span>, which.min)] <span class="co"># Name</span></span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(osm_id, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a>osm_id<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(xx)</span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, poi[,<span class="fu">c</span>(<span class="st">"osm_id"</span>, <span class="st">"name"</span>, <span class="st">"type"</span>)], </span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a>                <span class="at">by =</span> <span class="st">"osm_id"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a><span class="co"># Time to the nearest climbing area</span></span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">apply</span>(xx, <span class="dv">1</span>, min) <span class="co"># Time</span></span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(time, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a>time<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(time)</span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, time, <span class="at">by =</span> <span class="st">"iris"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of climbing area at less than 10 minutes by bike</span></span>
+<span id="cb5-131"><a href="#cb5-131" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> xx</span>
+<span id="cb5-132"><a href="#cb5-132" aria-hidden="true" tabindex="-1"></a>n10mn <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(xx, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-133"><a href="#cb5-133" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&lt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-134"><a href="#cb5-134" aria-hidden="true" tabindex="-1"></a>n10mn[n10mn <span class="sc">&gt;</span> <span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb5-135"><a href="#cb5-135" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>N <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n10mn)</span>
+<span id="cb5-136"><a href="#cb5-136" aria-hidden="true" tabindex="-1"></a>n10mn<span class="sc">$</span>iris <span class="ot">&lt;-</span> <span class="fu">row.names</span>(n10mn)</span>
+<span id="cb5-137"><a href="#cb5-137" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> <span class="fu">merge</span>(osm_id, n10mn[,<span class="fu">c</span>(<span class="st">"iris"</span>, <span class="st">"N"</span>)], <span class="at">by =</span> <span class="st">"iris"</span>,</span>
+<span id="cb5-138"><a href="#cb5-138" aria-hidden="true" tabindex="-1"></a>                <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-139"><a href="#cb5-139" aria-hidden="true" tabindex="-1"></a>osm_id <span class="ot">&lt;-</span> osm_id[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>, <span class="dv">6</span><span class="sc">:</span><span class="dv">7</span>)]</span>
+<span id="cb5-140"><a href="#cb5-140" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(osm_id) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"CODE_IRIS"</span>, <span class="st">"FSGT_NAME"</span>, <span class="st">"FSGT_TIME"</span>, <span class="st">"FSGT_10MN"</span>)</span>
+<span id="cb5-141"><a href="#cb5-141" aria-hidden="true" tabindex="-1"></a>iris <span class="ot">&lt;-</span> <span class="fu">merge</span>(iris, osm_id, <span class="at">by =</span> <span class="st">"CODE_IRIS"</span>, <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-142"><a href="#cb5-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-143"><a href="#cb5-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-144"><a href="#cb5-144" aria-hidden="true" tabindex="-1"></a><span class="co"># A function to display results in this iris dataframe</span></span>
+<span id="cb5-145"><a href="#cb5-145" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(iris, <span class="st">"data-conso/iris.geojson"</span>)</span>
+<span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(com, <span class="st">"data-conso/com.geojson"</span>)</span>
+<span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(poi, <span class="st">"data-conso/poi.geojson"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

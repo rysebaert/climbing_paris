@@ -14,11 +14,12 @@ A bounding box of 10 km around Paris (map bounding box). Considering the fact th
 
 IRIS data is imported, Paris is extracted, a buffer of 10km is created to identify the bounding box.
 
-```{r}
+```{r, eval = FALSE}
 library(sf)
 
+
 # Source : IGN
-iris <- st_read("CONTOURS-IRIS.shp", quiet = TRUE)
+iris <- st_read("data-raw/CONTOURS-IRIS.shp", quiet = TRUE)
 
 # Extract Paris
 # Département
@@ -59,11 +60,13 @@ plot(st_geometry(com), col = NA, border = "black", lwd = .5, add = TRUE)
 
 Data is enriched by socio-economic data (disposible income) for further analysis. We keep only "Habitation" IRIS for origins-destination calculation.
 
-```{r}
+```{r, eval = FALSE}
+head(iris)
 library(readxl)
 # Import INSEE data
 df <- read_xlsx("data-raw/BASE_TD_FILO_DISP_IRIS_2019.xlsx", skip = 5, sheet = "IRIS_DISP")
-iris <- merge(iris[,c("CODE_IRIS", "NOM_IRIS", "TYP_IRIS")], df[,c("IRIS", "DISP_MED19")],
+iris <- merge(iris[,c("CODE_IRIS", "NOM_IRIS", "TYP_IRIS", "NOM_COM")], 
+              df[,c("IRIS","DISP_MED19")],
               by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
 
 # Keep only habitation IRIS for origins calculation
@@ -73,7 +76,7 @@ ori <- st_centroid(ori)
 
 Data is transformed in latitude/longitude for origin-destination calculations and implementation in Observable.
 
-```{r}
+```{r, eval = FALSE}
 # Consolidated data
 ori <- st_transform(ori, crs = 4326)
 iris <- st_transform(iris, crs = 4326)
@@ -86,7 +89,7 @@ Data is imported from OpenStreetMap. We can argue that the accuracy of the data 
 
 When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
-```{r}
+```{r, eval = FALSE}
 library(osmdata)
 
 # define a bounding box
@@ -122,9 +125,9 @@ add slope to the calculation : https://www.liedman.net/2015/04/13/add-elevation-
 
 mapbox solution : https://blog.mapbox.com/elevation-aware-routing-profiles-in-mapbox-directions-21e182a85165
 
-```{r}
+```{r, eval = FALSE}
 library(osrm)
-options(osrm.server = "http://188.166.36.154:5000/", osrm.profile = "bike")
+options(osrm.server = "http://1xx.xxx.3x.1x4:5xx0/", osrm.profile = "bike")
 
 # Manage ids
 row.names(ori) <- ori$CODE_IRIS
