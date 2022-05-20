@@ -1,0 +1,13 @@
+# Pull the image docker
+docker pull osrm/osrm-backend
+
+# Download geofabrick
+docker run -t -v c:/docker:/data osrm/osrm-backend osrm-extract -p /opt/bicycle.lua /data/ile-de-france-latest.osm.pbf
+docker run -t -v c:/docker:/data osrm/osrm-backend osrm-partition /data/ile-de-france-latest.osrm
+docker run -t -v c:/docker:/data osrm/osrm-backend osrm-customize /data/ile-de-france-latest.osrm
+ 
+docker run --name osrm -t -i -p 5000:5000 -v c:/docker:/data osrm/osrm-backend osrm-routed --algorithm mld /data/ile-de-france-latest.osrm
+
+
+# Augmenter taille
+docker run --name osrm -t -i -p 5000:5000 -v c:/docker:/data osrm/osrm-backend osrm-routed --algorithm mld --max-table-size 50000000 /data/ile-de-france-latest.osrm
