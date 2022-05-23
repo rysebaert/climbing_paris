@@ -3,10 +3,9 @@ title: "OSRM Travel-time calculation with R and data visualization with Observab
 subtitle: "Application to artifical climbing walls in Paris and its neighbourhood"
 author: Ronan Ysebaert
 date: "June 2022"
-format: html
-editor: visual
-editor_options: 
-  chunk_output_type: inline
+format:
+  html:
+    theme: sandstone
 ---
 
 The aim of this document consists in showing how to build, visualize and reproduce accessibility indicators by combining points of interest (POI) coming from the OpenStreetMap database, socio-economic indicators included in small territorial division (IRIS) and routing engines (OSRM).
@@ -156,18 +155,18 @@ poi <- st_transform(poi, 4326)
 
 The data preparation allows to prepare origins-destinations layers for travel-time calculation. Origins correspond to the IRIS layer (only type H : 2141 points). Destinations to artificial climbing areas (45 points).
 
-```{r, eval = TRUE, echo = FALSE}
+```{r, eval = TRUE, echo = FALSE, cache.comments=TRUE}
 library(sf)
-poi <- st_read("data-conso/poi.geojson")
-iris <- st_read("data-conso/iris.geojson")
-com <- st_read("data-conso/com.geojson")
+poi <- st_read("data-conso/poi.geojson", quiet = TRUE)
+iris <- st_read("data-conso/iris.geojson", quiet = TRUE)
+com <- st_read("data-conso/com.geojson", quiet = TRUE)
 
 poi <- st_transform(poi, 2154)
 iris <- st_transform(iris, 2154)
 com <- st_transform(com, 2154)
 ```
 
-```{r, eval = TRUE, out.width= "100%"}
+```{r, eval = TRUE, out.width= "100%", warning=FALSE}
 library(mapsf)
 ori <- st_centroid(iris)
 ori <- ori[ori$TYP_IRIS == "H",]
@@ -208,8 +207,6 @@ mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022
 ```
 
 ## Time distance to climbing artificial structures
-
-### Computation
 
 We have now required origins and destinations required to compute travel-time calculations. The computation is realized using the `osrm` R package (Giraud, 2022). This package allows to compute routes, trips, isochrones and travel distances matrices (travel time and kilometric distance).
 
@@ -264,14 +261,6 @@ df4 <- data.frame(df4$duration)
 colnames(df4) <- as.character(poi_fsgt$osm_id)
 row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
-```
-
-### Results
-
-```{r}
-iris.df <- st_set_geometry(iris, NULL)
-head(iris.df)
-head(poi)
 ```
 
 ## Computing indicators at IRIS level
@@ -405,6 +394,63 @@ colnames(osm_id) <- c("CODE_IRIS", "FSGT_NAME", "FSGT_TIME",
 iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 ```
 
+### Resulting indicators
+
+Resulting geojson includes the followings attributes :
+
+-   CODE_IRIS : IRIS code
+
+```{=html}
+<!-- -->
+```
+-   NOM_IRIS : IRIS Name
+
+-   ALL_NAME : Name of the nearest artificial climbing area by bike (all structures)
+
+-   TYPE_STRUCT : Type of the nearest artificial climbing area by bike (speculative or associative)
+
+-   ALL_TIME : Time by bike to reach the nearest artificial climbing area.
+
+-   N_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (all structures)
+
+-   PRIV_NAME : Name of the nearest artificial climbing area by bike (Private structure)
+
+-   PRIV_TIME : Time by bike to reach the nearest artificial climbing area (Private structure).
+
+-   N_PRIV_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (private structures).
+
+-   FFME_NAME : Name of the nearest artificial climbing area by bike (Associative structure, federation : FFME)
+
+-   FFME_TIME : Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FFME).
+
+-   N_FFME_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FFME).
+
+-   FSGT_NAME : Name of the nearest artificial climbing area by bike (Associative structure, federation : FSGT)
+
+-   FSGT_TIME : Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FSGT).
+
+-   N_FSGT_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FSGT).
+
+```{r, echo = FALSE, warning=FALSE}
+iris.df <- st_set_geometry(iris, NULL)
+iris.df <- iris.df[iris.df$TYP_IRIS == "H",]
+iris.df <- iris.df[,c(1,5,8:20)]
+
+
+font.size <- "8pt"
+library(DT)
+datatable(iris.df, rownames = FALSE, escape = FALSE, 
+          class = "hoover",
+          options = list(dom = 't',  pageLength = nrow(iris.df), scrollY = "600px",
+                 initComplete = htmlwidgets::JS(
+          "function(settings, json) {",
+          paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+          "}")
+       )) 
+```
+
+## 
+
 ## Characterizing the POI neighbourhood
 
 For each climbing areas, we are interested in defining the socio-economic characteristics of their neighbourhood.
@@ -439,6 +485,54 @@ for (i in 1:nrow(t.df)){
 
 poi <- merge(poi, poi_socio, by = "osm_id", all.x = TRUE)
 ```
+
+### Resulting indicators
+
+Resulting poi.geojson includes the followings attributes. Some of them comes directly from the OpenStreetMap database :
+
+-   osm_id : OpenStreetMap identifier (responding to the query sport=climbing in the bounding box of the study area).
+
+-   name : name of the artificial climbing area
+
+```{=html}
+<!-- -->
+```
+-   climbing.toptope: If the articial climbing area is a wall (need a rope to climb)
+-   climbing.boulder: If the artificial climbing area is dedicated to bouldering (no need of rope to climb).
+-   climbing.length: Height of the wall (if adapted, for walls)
+-   climbing.routes: Number of climbing routes (if adapted, for walls)
+-   brand: Name of the enterprise managing the private artificial climbing area
+
+As demonstrated above, we have added several attributes for the need of the analysis, not originally included in the OpenStreetMap database :
+
+-   type: Speculative or associative structure (speculative meaning private)
+
+-   federation; Organization managing the artificial climbing area (private, FFME or FSGT)
+
+-   SUM_POP18: Population at less than 15 minutes by bike of the artificial climbing area (IRIS centroids).
+
+-   MIN_REV19: Mininum of the median income for the IRIS located at less than 15 minutes by bike.
+
+-   MOY_REV19: Mean of the Median income for the IRIS located at less than 15 minutes by bike.
+
+-   MAX_REV19: Maximum of the Median income for the IRIS located at less than 15 minutes by bike.
+
+```{r, echo = FALSE, warning=FALSE}
+poi.df <- st_set_geometry(poi, NULL)
+
+font.size <- "8pt"
+library(DT)
+datatable(poi.df, rownames = FALSE, escape = FALSE, 
+          class = "hoover",
+          options = list(dom = 't',  pageLength = nrow(iris.df), scrollY = "600px",
+                 initComplete = htmlwidgets::JS(
+          "function(settings, json) {",
+          paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
+          "}")
+       )) 
+```
+
+## 
 
 ## Export results
 

@@ -39,12 +39,12 @@ com <- aggregate(iris[,c("INSEE_COM", "NOM_COM")],
 library(readxl)
 df <- read_xlsx("data-raw/base-ic-evol-struct-pop-2018.xlsx", skip = 5, sheet = "IRIS")
 iris10k <- merge(iris10k[,c("CODE_IRIS", "NOM_IRIS", "TYP_IRIS", "NOM_COM")], 
-              df[,c("IRIS","P18_POP")],
-              by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
+                 df[,c("IRIS","P18_POP")],
+                 by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
 
 df <- read_xlsx("data-raw/BASE_TD_FILO_DISP_IRIS_2019.xlsx", skip = 5, sheet = "IRIS_DISP")
 iris10k <- merge(iris10k, df[,c("IRIS","DISP_MED19")],
-              by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
+                 by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
 
 iris <- st_intersection(iris, paris5k)
 
@@ -119,7 +119,7 @@ row.names(df3) <- as.character(ori$CODE_IRIS)
 write.csv(df3, "data-conso/bike-duration-ffme.csv")
 
 # FSGT
-dest_fsgt <- dest_asso[poi_asso$federation == "FSGT",]
+dest_fsgt <- dest_asso[dest_asso$federation == "FSGT",]
 df4 <- osrmTable(src = ori, dst = dest_fsgt, measure = "duration")
 df4 <- data.frame(df4$duration)
 colnames(df4) <- as.character(poi_fsgt$osm_id)
@@ -129,6 +129,8 @@ write.csv(df4, "data-conso/bike-duration-fsgt.csv")
 
 # 5. Accessibility indicator creation (IRIS) ----
 # Name of the nearest structure
+df <- read.csv("data-conso/bike-duration.csv", row.names = "X")
+colnames(df) <- as.character(dest$osm_id)
 osm_id <- colnames(df)[apply(df, 1, which.min)] # Name
 osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
 osm_id$iris <- row.names(df)
@@ -158,6 +160,8 @@ iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 
 # Prive climbing club (fees $$$)
 # Name of the nearest structure
+df2 <- read.csv("data-conso/bike-duration-priv.csv", row.names = "X")
+colnames(df2) <- as.character(dest_priv$osm_id)
 osm_id <- colnames(df2)[apply(df2, 1, which.min)] # Name
 osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
 osm_id$iris <- row.names(df2)
@@ -187,6 +191,8 @@ iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 
 # FFME associative structure
 # Name of the nearest structure
+df3 <- read.csv("data-conso/bike-duration-ffme.csv", row.names = "X")
+colnames(df3) <- as.character(dest_ffme$osm_id)
 osm_id <- colnames(df3)[apply(df3, 1, which.min)] # Name
 osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
 osm_id$iris <- row.names(df3)
@@ -216,6 +222,8 @@ iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 
 # FSGT associative structure
 # Name of the nearest structure
+df4 <- read.csv("data-conso/bike-duration-fsgt.csv", row.names = "X")
+colnames(df4) <- as.character(dest_fsgt$osm_id)
 osm_id <- colnames(df4)[apply(df4, 1, which.min)] # Name
 osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
 osm_id$iris <- row.names(df4)
