@@ -6,7 +6,7 @@ date: "June 2022"
 format: html
 editor: visual
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 The aim of this document consists in showing how to build, visualize and reproduce accessibility indicators by combining points of interest (POI) coming from the OpenStreetMap database, socio-economic indicators included in small territorial division (IRIS) and routing engines (OSRM).
@@ -152,7 +152,64 @@ poi <- st_intersection(poi, paris5k)
 poi <- st_transform(poi, 4326)
 ```
 
+## Input layers visualisation
+
+The data preparation allows to prepare origins-destinations layers for travel-time calculation. Origins correspond to the IRIS layer (only type H : 2141 points). Destinations to artificial climbing areas (45 points).
+
+```{r, eval = TRUE, echo = FALSE}
+library(sf)
+poi <- st_read("data-conso/poi.geojson")
+iris <- st_read("data-conso/iris.geojson")
+com <- st_read("data-conso/com.geojson")
+
+poi <- st_transform(poi, 2154)
+iris <- st_transform(iris, 2154)
+com <- st_transform(com, 2154)
+```
+
+```{r, eval = TRUE, out.width= "100%"}
+library(mapsf)
+ori <- st_centroid(iris)
+ori <- ori[ori$TYP_IRIS == "H",]
+
+par(mar = c(0,0,0,0))
+
+my_theme <- list(bg = NA, fg = NA, mar = c(0, 0, 0, 0), tab = TRUE, pos = "left", 
+                  inner = TRUE, line = 1.3, cex = 1, font = 2)
+
+mf_init(com, expandBB = c(0,0.4,0,0), theme = my_theme)
+
+mf_typo(
+  x = iris, var = "TYP_IRIS", 
+  pal = c("peachpuff", "#feb8ff", "#f0e6f0", "#f1f7ab"), lwd = 0.25,
+  val_order = c("H", "A", "D", "Z"), border = "white", leg_pos = c(631000, 6872000),
+  leg_title = "IRIS types (H = dwellings)", add = TRUE)
+
+mf_map(ori, pch = 20, col = "red", cex = .2, add = TRUE)
+
+mf_legend(
+  type = "symb", pos =  c(631000, 6864000), val = c("H", "H"),
+  pt_pch = c(20,20), pt_cex =.2, title = "Origins : IRIS centroids type H",
+  pal = c("red", "red"))
+
+mf_typo(x = poi, var = "federation", pch = 21, cex = .7,
+        val_order = c("Private", "FSGT", "FFME"),
+        pal = c("#377eb8", "#e41a1c", "#ff7f00"),
+        leg_title = "Destinations:\nArtificial climbing areas",
+        leg_pos = c(631000, 6860000),
+        add = TRUE)
+
+mf_map(com, col = NA, border = "black", add = TRUE)
+
+mf_title("Layers presentation for origins-destinations calculation")
+mf_scale(size = 5, col = "black", pos = "bottomright")
+mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022\n",
+                  "Realisation : Ronan Ysebaert, 2022"))
+```
+
 ## Time distance to climbing artificial structures
+
+### Computation
 
 We have now required origins and destinations required to compute travel-time calculations. The computation is realized using the `osrm` R package (Giraud, 2022). This package allows to compute routes, trips, isochrones and travel distances matrices (travel time and kilometric distance).
 
@@ -207,6 +264,14 @@ df4 <- data.frame(df4$duration)
 colnames(df4) <- as.character(poi_fsgt$osm_id)
 row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
+```
+
+### Results
+
+```{r}
+iris.df <- st_set_geometry(iris, NULL)
+head(iris.df)
+head(poi)
 ```
 
 ## Computing indicators at IRIS level
