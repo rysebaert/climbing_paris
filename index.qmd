@@ -38,8 +38,6 @@ A bounding box of 5 km around Paris, without Bois de Boulogne et Bois de Vincenn
 
 A second bouding box (10 km around Paris) is created to catch OpenStreetMap POI in the neighbourhood of this study area.
 
-IRIS are aggregated at commune level for the map layout.
-
 ```{r, eval = FALSE}
 # 1. Map layout preparation at IRIS scale (source IGN)----
 library(sf)
@@ -71,11 +69,6 @@ iris10k <- st_intersection(iris, paris10k)
 paris10k <- st_transform(paris10k, 4326)
 paris10k <- st_bbox(paris10k) 
 paris10k <- as.vector(paris10k)
-
-# Communes aggregation (layout)
-com <- aggregate(iris[,c("INSEE_COM", "NOM_COM")],
-                 by = list(iris$INSEE_COM),
-                 FUN = head, 1)
 ```
 
 ## Feed IRIS layer by socio-economic data (INSEE)
@@ -140,12 +133,27 @@ asso <- dest[!is.na(dest$federation),]
 asso$type <- "Associative structure"
 private$type <- "Speculative structure"
 dest <- rbind(asso, private)
-
-cols <- c("osm_id", "name", "climbing.toprope", "climbing.boulder", "climbing.length",
-          "climbing.routes", "type", "federation", "brand")
 dest <- dest[,cols]
 dest$federation[is.na(dest$federation)] <- "Private"
 
+
+# Manage artificial area type
+dest[c("climbing.toprope", "climbing.boulder")][is.na(dest[c("climbing.toprope", "climbing.boulder")])] <- "no"
+
+dest$climbing_type <- ifelse(dest$climbing.toprope == 'yes'  & 
+                               dest$climbing.boulder == "yes",'Wall and bouldering',
+                             ifelse(dest$climbing.toprope == 'yes' & 
+                                      dest$climbing.boulder == "no" , 'Wall',
+                                    ifelse(dest$climbing.toprope == 'no' &
+                                             dest$climbing.boulder == "yes" , 'Bouldering',
+                                           NA)))
+
+cols <- c("osm_id", "name", "climbing_type", "climbing.length",
+          "climbing.routes", "type", "federation", "brand", "SUM_POP18", "MIN_REV19", "MOY_REV19", "MAX_REV19")
+
+dest <- dest[,cols]
+
+# Intersection with bouding box 
 poi <- st_transform(dest, 2154)
 poi <- st_intersection(poi, paris5k)
 poi <- st_transform(poi, 4326)
@@ -399,36 +407,19 @@ iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 Resulting geojson includes the followings attributes :
 
 -   CODE_IRIS : IRIS code
-
-```{=html}
-<!-- -->
-```
 -   NOM_IRIS : IRIS Name
-
 -   ALL_NAME : Name of the nearest artificial climbing area by bike (all structures)
-
 -   TYPE_STRUCT : Type of the nearest artificial climbing area by bike (speculative or associative)
-
 -   ALL_TIME : Time by bike to reach the nearest artificial climbing area.
-
 -   N_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (all structures)
-
 -   PRIV_NAME : Name of the nearest artificial climbing area by bike (Private structure)
-
 -   PRIV_TIME : Time by bike to reach the nearest artificial climbing area (Private structure).
-
 -   N_PRIV_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (private structures).
-
 -   FFME_NAME : Name of the nearest artificial climbing area by bike (Associative structure, federation : FFME)
-
 -   FFME_TIME : Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FFME).
-
 -   N_FFME_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FFME).
-
 -   FSGT_NAME : Name of the nearest artificial climbing area by bike (Associative structure, federation : FSGT)
-
 -   FSGT_TIME : Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FSGT).
-
 -   N_FSGT_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FSGT).
 
 ```{r, echo = FALSE, warning=FALSE}
@@ -494,13 +485,12 @@ Resulting poi.geojson includes the followings attributes. Some of them comes dir
 
 -   name : name of the artificial climbing area
 
-```{=html}
-<!-- -->
-```
--   climbing.toptope: If the articial climbing area is a wall (need a rope to climb)
--   climbing.boulder: If the artificial climbing area is dedicated to bouldering (no need of rope to climb).
--   climbing.length: Height of the wall (if adapted, for walls)
--   climbing.routes: Number of climbing routes (if adapted, for walls)
+-   climbing_type: If the articial climbing area is a wall (need a rope to climb), dedicated to bouldering, or both.
+
+-   climbing_length: Height of the wall (if adapted, for walls)
+
+-   climbing_routes: Number of climbing routes (if adapted, for walls)
+
 -   brand: Name of the enterprise managing the private artificial climbing area
 
 As demonstrated above, we have added several attributes for the need of the analysis, not originally included in the OpenStreetMap database :
@@ -532,7 +522,19 @@ datatable(poi.df, rownames = FALSE, escape = FALSE,
        )) 
 ```
 
-## 
+## Map generalization
+
+Geometries are quite detailed. The library `rmapshaper` (Teucher, 2022) is used to simplify the layer. 9 % of the points constituting the polygons are kept. Then, the IRIS layer is aggregated in communes for the map layout.
+
+```{r, eval = FALSE}
+library(rmapshaper)
+iris <- ms_simplify(iris, keep = 0.09)
+
+# Communes aggregation (layout)
+com <- aggregate(iris[,c("INSEE_COM", "NOM_COM")],
+                 by = list(iris$INSEE_COM),
+                 FUN = head, 1)
+```
 
 ## Export results
 

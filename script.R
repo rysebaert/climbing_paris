@@ -16,6 +16,7 @@ paris <- st_union(paris)
 # 5 km around Paris map layout
 paris5k <- st_buffer(paris, 5000)
 paris5k <- st_as_sfc(st_bbox(paris5k, crs = 2154))
+paris <- paris5k
 
 # 10 km around Paris (get OSM data) in long/lat
 paris10k <- st_buffer(paris, 10000)
@@ -29,11 +30,6 @@ paris10k <- st_transform(paris10k, 4326)
 paris10k <- st_bbox(paris10k) 
 paris10k <- as.vector(paris10k)
 
-# Communes aggregation (layout)
-com <- aggregate(iris[,c("INSEE_COM", "NOM_COM")],
-                 by = list(iris$INSEE_COM),
-                 FUN = head, 1)
-
 
 # 2. Feed IRIS layer by socio-economic data (INSEE) ----
 library(readxl)
@@ -46,7 +42,7 @@ df <- read_xlsx("data-raw/BASE_TD_FILO_DISP_IRIS_2019.xlsx", skip = 5, sheet = "
 iris10k <- merge(iris10k, df[,c("IRIS","DISP_MED19")],
                  by.x = "CODE_IRIS", by.y = "IRIS", all.x = TRUE)
 
-iris <- st_intersection(iris, paris5k)
+iris <- st_intersection(iris10k, paris5k)
 
 # Keep only habitation IRIS for origins calculation
 ori <- iris10k[iris10k$TYP_IRIS == "H",]
@@ -54,10 +50,9 @@ ori <- st_centroid(ori)
 
 ori <- st_transform(ori, crs = 4326)
 iris <- st_transform(iris, crs = 4326)
-com <- st_transform(com, crs = 4326)
 
 
-# 3. Extract sport climbing areas from OSM ----
+# 3. Extract OSM objects (climbing and map layout)----
 library(osmdata)
 
 # define a bounding box
@@ -67,22 +62,38 @@ q0 <- opq(bbox = paris10k)
 q <- add_osm_feature(opq = q0, key = 'sport', value = "climbing")
 res <- osmdata_sf(q)
 dest <- res$osm_points
+dest[,"name"] <- iconv(dest$name, from = "UTF-8", to = "UTF-8")
 
-# Manage private and associative areas
-private <- dest[!is.na(dest$brand),]
+
+# Cleaning
+private <- dest[!is.na(dest$brand),] # Manage private and associative areas
 asso <- dest[!is.na(dest$federation),]
 asso$type <- "Associative structure"
 private$type <- "Speculative structure"
 dest <- rbind(asso, private)
-
-cols <- c("osm_id", "name", "climbing.toprope", "climbing.boulder", "climbing.length",
+dest$federation[is.na(dest$federation)] <- "Private"
+# Find walls and boulders
+dest[c("climbing.toprope", "climbing.boulder")][is.na(dest[c("climbing.toprope", "climbing.boulder")])] <- "no"
+dest$climbing_type <- ifelse(dest$climbing.toprope == 'yes' & 
+                               dest$climbing.boulder == "yes", 'Wall and bouldering',
+                             ifelse(dest$climbing.toprope == 'yes' & 
+                                      dest$climbing.boulder == "no" , 'Wall',
+                                    ifelse(dest$climbing.toprope == 'no' & 
+                                             dest$climbing.boulder == "yes" ,
+                                           'Bouldering', NA)))
+# Keep only attributes of interest and rename it
+cols <- c("osm_id", "name", "climbing_type", "climbing.length",
           "climbing.routes", "type", "federation", "brand")
 dest <- dest[,cols]
-dest$federation[is.na(dest$federation)] <- "Private"
+colnames(dest)[4:5] <- c("climbing_length", "climbing_routes")
 
+# Intersection with bouding box 
 poi <- st_transform(dest, 2154)
 poi <- st_intersection(poi, paris5k)
 poi <- st_transform(poi, 4326)
+
+
+
 
 # 4. Origin - Destination calculation with OSRM ----
 library(osrm)
@@ -134,7 +145,7 @@ colnames(df) <- as.character(dest$osm_id)
 osm_id <- colnames(df)[apply(df, 1, which.min)] # Name
 osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
 osm_id$iris <- row.names(df)
-osm_id <- merge(osm_id, poi[,c("osm_id", "name", "type")], 
+osm_id <- merge(osm_id, poi[,c("osm_id", "name", "federation")], 
                 by = "osm_id", all.x = TRUE)
 
 # Time to the nearest climbing area
@@ -147,7 +158,7 @@ osm_id$geometry <- NULL
 # Number of climbing area at less than 15 minutes by bike
 n15mn <- df
 n15mn <- data.frame(df, stringsAsFactors = FALSE)
-n15mn[n15mn < 15] <- 1
+n15mn[n15mn <= 15] <- 1
 n15mn[n15mn > 15] <- 0
 n15mn$N <- rowSums(n15mn)
 n15mn$iris <- row.names(n15mn)
@@ -178,7 +189,7 @@ osm_id$geometry <- NULL
 # Number of climbing area at less than 15 minutes by bike
 n15mn <- df2
 n15mn <- data.frame(df2, stringsAsFactors = FALSE)
-n15mn[n15mn < 15] <- 1
+n15mn[n15mn <= 15] <- 1
 n15mn[n15mn > 15] <- 0
 n15mn$N <- rowSums(n15mn)
 n15mn$iris <- row.names(n15mn)
@@ -209,7 +220,7 @@ osm_id$geometry <- NULL
 # Number of climbing area at less than 15 minutes by bike
 n15mn <- df3
 n15mn <- data.frame(df3, stringsAsFactors = FALSE)
-n15mn[n15mn < 15] <- 1
+n15mn[n15mn <= 15] <- 1
 n15mn[n15mn > 15] <- 0
 n15mn$N <- rowSums(n15mn)
 n15mn$iris <- row.names(n15mn)
@@ -240,7 +251,7 @@ osm_id$geometry <- NULL
 # Number of climbing area at less than 15 minutes by bike
 n15mn <- df4
 n15mn <- data.frame(df4, stringsAsFactors = FALSE)
-n15mn[n15mn < 15] <- 1
+n15mn[n15mn <= 15] <- 1
 n15mn[n15mn > 15] <- 0
 n15mn$N <- rowSums(n15mn)
 n15mn$iris <- row.names(n15mn)
@@ -250,6 +261,7 @@ osm_id <- osm_id[,c(1,3,5:6)]
 colnames(osm_id) <- c("CODE_IRIS", "FSGT_NAME", "FSGT_TIME",
                       "N_FSGT_15MN")
 iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
+
 
 
 # 6. Characterise the POI neighbourhood ----
@@ -276,6 +288,60 @@ for (i in 1:nrow(t.df)){
 
 poi <- merge(poi, poi_socio, by = "osm_id", all.x = TRUE)
 
+# Correct MurMur and Rename ESC15
+poi[17,"climbing_routes"] <- 100
+poi[17,"climbing_length"] <- 17
+
+poi[16,"name"] <- "ESC 15 - La Plaine"
+poi[31,"name"] <- "ESC 15 - Croix Nivert"
+
+# 7. Simplify geometries for data visualization
+library(rmapshaper)
+iris <- ms_simplify(iris, keep = 0.09)
+parc <- ms_simplify(parc, keep = 0.09)
+
+# Communes aggregation (layout)
+com <- aggregate(iris[,c("NOM_COM")],
+                 by = list(iris$NOM_COM),
+                 FUN = head, 1)
+
+# Extract IRIS at less than 15 minutes by bike
+iris15 <- iris[iris$ALL_TIME < 15,]
+iris15 <- iris15[!is.na(iris15$ALL_TIME),]
+
+
 st_write(com, "data-conso/com.geojson")
 st_write(iris, "data-conso/iris.geojson")
+st_write(iris15, "data-conso/iris15.geojson")
 st_write(poi, "data-conso/poi.geojson")
+st_write(parc, "data-conso/parc.geojson")
+st_write(river, "data-conso/river.geojson")
+
+
+# For plots
+## Time * federation
+data_iris <- data.frame(matrix(nrow = 0, ncol = 2))
+colnames(data_iris) <- c("TIME", "TYPE")
+
+tmp <- st_set_geometry(iris, NULL)
+TIME <- tmp$PRIV_TIME[!is.na(tmp$PRIV_TIME)]
+TYPE <- rep("Private", length(TIME))
+df <- data.frame(TIME, TYPE)
+
+data_iris <- rbind(data_iris, df)
+
+TIME <- tmp$FSGT_TIME[!is.na(tmp$FSGT_TIME)]
+TYPE <- rep("FSGT", length(TIME))
+df <- data.frame(TIME, TYPE)
+
+data_iris <- rbind(data_iris, df)
+
+TIME <- tmp$FFME_TIME[!is.na(tmp$FFME_TIME)]
+TYPE <- rep("FFME", length(TIME))
+df <- data.frame(TIME, TYPE)
+
+data_iris <- rbind(data_iris, df)
+write.csv(data_iris, "data-conso/time_federation_iris.csv")
+
+test <- read.csv("data-conso/time_federation_iris.csv")
+levels(as.factor(test$TYPE))
