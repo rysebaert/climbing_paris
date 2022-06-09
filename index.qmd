@@ -1,18 +1,30 @@
 ---
 title: "OSRM Travel-time calculation with R and data visualization with Observable"
 subtitle: "Application to artifical climbing walls in Paris and its neighbourhood"
-author: Ronan Ysebaert
+author:
+  - name: Ronan Ysebaert 
+    url: https://rysebaert.github.io/climbing_paris/
+    affiliation: UAR RIATE, Université Paris Cité, CNRS
+    affiliation-url: https://riate.cnrs.fr/
+citation: true
 date: "June 2022"
+bibliography: bib.bib
 format:
   html:
     theme: sandstone
+    fontsize: 0.9em
+    code-tools: true
+    code-fold: true
+    toc: true
+    toc-depth: 2
+    css: "styles.css"
 ---
+
+**Work in progress**
 
 The aim of this document consists in showing how to build, visualize and reproduce accessibility indicators by combining points of interest (POI) coming from the OpenStreetMap database, socio-economic indicators included in small territorial division (IRIS) and routing engines (OSRM).
 
 The graphical outputs displayed in this notebook are also available in an [Observable collection](https://observablehq.com/collection/@rysebaert/climbing_paris "Go to Observable Notebook").
-
-It is applied to sport climbing in Paris, but this example could be easily extended to other areas of interest or other amenities (OpenStreetMap key-values).
 
 To introduce the reader to the issues raised by indoor sport-climbing in Paris, have a look to [this notebook](https://observablehq.com/d/d2be39c4dd55a32d?collection=@rysebaert/climbing_paris "Go to Observable Notebook").
 
@@ -32,11 +44,11 @@ Three data providers are used to build the consolidated data of this document.
 
 Input data is not provided in the Github repository (too large files), but can be easily be downloaded.
 
-## Map layout preparation
+## Map layout
 
 A bounding box of 5 km around Paris, without Bois de Boulogne et Bois de Vincennes for a better centering of the map layout.
 
-A second bouding box (10 km around Paris) is created to catch OpenStreetMap POI in the neighbourhood of this study area.
+A second bounding box (10 km around Paris) is created to catch OpenStreetMap POI in the neighbourhood of this study area.
 
 ```{r, eval = FALSE}
 # 1. Map layout preparation at IRIS scale (source IGN)----
@@ -71,9 +83,9 @@ paris10k <- st_bbox(paris10k)
 paris10k <- as.vector(paris10k)
 ```
 
-## Feed IRIS layer by socio-economic data (INSEE)
+## Feed IRIS with socio-economic data (INSEE)
 
-Data is enriched by socio-economic data (disposible income) for further analysis. We keep only "Habitation" IRIS for origins-destination calculation.
+Data is enriched by socio-economic data (disposible median income 2019 and total population 2018) for further analysis. We keep only "Habitation" IRIS (dedicated to dwellings) for origins-destinations calculations.
 
 ```{r, eval = FALSE}
 library(readxl)
@@ -105,15 +117,17 @@ iris <- st_transform(iris, crs = 4326)
 com <- st_transform(com, crs = 4326)
 ```
 
-## Import OSM data with R
+## Import OSM points of interest
 
-Indoor sport climbing points of interest are downloaded from OpenStreetMap thanks to the `osmdata` R package (Padgham, 2022).
+Indoor sport climbing points of interest are downloaded from OpenStreetMap thanks to the `osmdata` R package (@osmdata).
 
 To access to these OSM features, the OSM key-value pair must be set. For climbing areas, it corresponds to the sport = climbing OSM tag. In the [OpenStreetMap wiki](https://wiki.openstreetmap.org/wiki/Tag:sport%3Dclimbing "Tag:sport=climbing in OSM wiki"), it is mentioned that "*sport=climbing should be preferably applied to noded for artificial climbing walls".* Thus, we only consider points responding to the query.
 
 The geographical coverage of the query covers a bounding box of 10 km around Paris (`paris10k`\`). At the end, only useful OSM attributes are kept. Associative and private structures are differentiated for thematic purpose.
 
 I argue that the accuracy and completeness of the data is quite good : I have edited missing points on OpenStreetMap with my personal knowledge and upstream investigation :-)
+
+For the presentation of the artificial climbing landscape in Paris and the difference between private - FSGT and FFME structures, have a look to [this notebook](https://observablehq.com/@rysebaert/forewords).
 
 ```{r, eval = FALSE}
 # 3. Extract sport climbing areas from OSM ----
@@ -159,11 +173,10 @@ poi <- st_intersection(poi, paris5k)
 poi <- st_transform(poi, 4326)
 ```
 
-## Input layers visualisation
 
 The data preparation allows to prepare origins-destinations layers for travel-time calculation. Origins correspond to the IRIS layer (only type H : 2141 points). Destinations to artificial climbing areas (45 points).
 
-```{r, eval = TRUE, echo = FALSE, cache.comments=TRUE}
+```{r, eval = TRUE, echo = FALSE, warning=FALSE}
 library(sf)
 poi <- st_read("data-conso/poi.geojson", quiet = TRUE)
 iris <- st_read("data-conso/iris.geojson", quiet = TRUE)
@@ -176,14 +189,19 @@ com <- st_transform(com, 2154)
 
 ```{r, eval = TRUE, out.width= "100%", warning=FALSE}
 library(mapsf)
+
+# Extract centroids from IRIS dedicated to dwellings
 ori <- st_centroid(iris)
 ori <- ori[ori$TYP_IRIS == "H",]
 
+# Map creation
 par(mar = c(0,0,0,0))
 
+# Set a map theme (library mapsf)
 my_theme <- list(bg = NA, fg = NA, mar = c(0, 0, 0, 0), tab = TRUE, pos = "left", 
                   inner = TRUE, line = 1.3, cex = 1, font = 2)
 
+# Create the map
 mf_init(com, expandBB = c(0,0.4,0,0), theme = my_theme)
 
 mf_typo(
@@ -214,9 +232,9 @@ mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022
                   "Realisation : Ronan Ysebaert, 2022"))
 ```
 
-## Time distance to climbing artificial structures
+## Travel-time calculation with OSRM
 
-We have now required origins and destinations required to compute travel-time calculations. The computation is realized using the `osrm` R package (Giraud, 2022). This package allows to compute routes, trips, isochrones and travel distances matrices (travel time and kilometric distance).
+We have now required origins and destinations required to compute travel-time calculations. The computation is realized using the `osrm` R package (@osrm). This package allows to compute routes, trips, isochrones and travel distances matrices (travel time and kilometric distance).
 
 Considering that the input data are quite important (more than 2000 origin points and 48 destination points) and to avoid to overload the OSRM demo server, I have run my own instance of OSRM based on docker container. To do so the procedure is explained in the [following documentation](https://github.com/Project-OSRM/osrm-backend#using-docker "Run OSRM with docker"), or more specifically for Windows [here](https://gist.github.com/AlexandraKapp/e0eee2beacc93e765113aff43ec77789 "How to set up your own OSRM backend with Docker on Windows").
 
@@ -271,7 +289,10 @@ row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
 ```
 
-## Computing indicators at IRIS level
+
+## Indicators creation
+
+### At IRIS level
 
 This heavy matrix is then manipulated to extract for each IRIS the following information :
 
@@ -402,47 +423,9 @@ colnames(osm_id) <- c("CODE_IRIS", "FSGT_NAME", "FSGT_TIME",
 iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 ```
 
-### Resulting indicators
-
-Resulting geojson includes the followings attributes :
-
--   CODE_IRIS : IRIS code
--   NOM_IRIS : IRIS Name
--   ALL_NAME : Name of the nearest artificial climbing area by bike (all structures)
--   TYPE_STRUCT : Type of the nearest artificial climbing area by bike (speculative or associative)
--   ALL_TIME : Time by bike to reach the nearest artificial climbing area.
--   N_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (all structures)
--   PRIV_NAME : Name of the nearest artificial climbing area by bike (Private structure)
--   PRIV_TIME : Time by bike to reach the nearest artificial climbing area (Private structure).
--   N_PRIV_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (private structures).
--   FFME_NAME : Name of the nearest artificial climbing area by bike (Associative structure, federation : FFME)
--   FFME_TIME : Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FFME).
--   N_FFME_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FFME).
--   FSGT_NAME : Name of the nearest artificial climbing area by bike (Associative structure, federation : FSGT)
--   FSGT_TIME : Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FSGT).
--   N_FSGT_15MN : Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FSGT).
-
-```{r, echo = FALSE, warning=FALSE}
-iris.df <- st_set_geometry(iris, NULL)
-iris.df <- iris.df[iris.df$TYP_IRIS == "H",]
-iris.df <- iris.df[,c(1,5,8:20)]
 
 
-font.size <- "8pt"
-library(DT)
-datatable(iris.df, rownames = FALSE, escape = FALSE, 
-          class = "hoover",
-          options = list(dom = 't',  pageLength = nrow(iris.df), scrollY = "600px",
-                 initComplete = htmlwidgets::JS(
-          "function(settings, json) {",
-          paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
-          "}")
-       )) 
-```
-
-## 
-
-## Characterizing the POI neighbourhood
+### Characterizing the POI neighbourhood
 
 For each climbing areas, we are interested in defining the socio-economic characteristics of their neighbourhood.
 
@@ -453,11 +436,13 @@ The previous matrix is transposed (lines \<\> columns). For each climbing struct
 -   Minimum, mean and maximum of median income of IRIS at less than 15 minutes by bike.
 
 ```{r, eval = FALSE}
+# Transpose dataframe
 t.df <- data.frame(t(df))
 colnames(t.df) <- iris10k[iris10k$TYP_IRIS == "H",]$CODE_IRIS
 t.df$osm_id <- dest$osm_id
 t.df <- t.df[t.df$osm_id %in% poi$osm_id,]
 
+# For each climbing area, get indicators of interest
 poi_socio <- data.frame(matrix(nrow = 0, ncol = 5))
 colnames(poi_socio) <- c("osm_id", "SUM_POP18", "MIN_REV19", "MOY_REV19", "MAX_REV19")
 
@@ -477,54 +462,9 @@ for (i in 1:nrow(t.df)){
 poi <- merge(poi, poi_socio, by = "osm_id", all.x = TRUE)
 ```
 
-### Resulting indicators
+## Simplify geometries
 
-Resulting poi.geojson includes the followings attributes. Some of them comes directly from the OpenStreetMap database :
-
--   osm_id : OpenStreetMap identifier (responding to the query sport=climbing in the bounding box of the study area).
-
--   name : name of the artificial climbing area
-
--   climbing_type: If the articial climbing area is a wall (need a rope to climb), dedicated to bouldering, or both.
-
--   climbing_length: Height of the wall (if adapted, for walls)
-
--   climbing_routes: Number of climbing routes (if adapted, for walls)
-
--   brand: Name of the enterprise managing the private artificial climbing area
-
-As demonstrated above, we have added several attributes for the need of the analysis, not originally included in the OpenStreetMap database :
-
--   type: Speculative or associative structure (speculative meaning private)
-
--   federation; Organization managing the artificial climbing area (private, FFME or FSGT)
-
--   SUM_POP18: Population at less than 15 minutes by bike of the artificial climbing area (IRIS centroids).
-
--   MIN_REV19: Mininum of the median income for the IRIS located at less than 15 minutes by bike.
-
--   MOY_REV19: Mean of the Median income for the IRIS located at less than 15 minutes by bike.
-
--   MAX_REV19: Maximum of the Median income for the IRIS located at less than 15 minutes by bike.
-
-```{r, echo = FALSE, warning=FALSE}
-poi.df <- st_set_geometry(poi, NULL)
-
-font.size <- "8pt"
-library(DT)
-datatable(poi.df, rownames = FALSE, escape = FALSE, 
-          class = "hoover",
-          options = list(dom = 't',  pageLength = nrow(iris.df), scrollY = "600px",
-                 initComplete = htmlwidgets::JS(
-          "function(settings, json) {",
-          paste0("$(this.api().table().container()).css({'font-size': '", font.size, "'});"),
-          "}")
-       )) 
-```
-
-## Map generalization
-
-Geometries are quite detailed. The library `rmapshaper` (Teucher, 2022) is used to simplify the layer. 9 % of the points constituting the polygons are kept. Then, the IRIS layer is aggregated in communes for the map layout.
+Geometries are quite detailed. The library `rmapshaper` (@rmapshaper) is used to simplify the layer. 9 % of the points constituting the polygons are kept. Then, the IRIS layer is aggregated in communes for the map layout.
 
 ```{r, eval = FALSE}
 library(rmapshaper)
@@ -538,10 +478,399 @@ com <- aggregate(iris[,c("INSEE_COM", "NOM_COM")],
 
 ## Export results
 
-Data preparation is over, we can go the data visualization section. Resulting geojson (poi, iris ad communes) are exported in geojson.
+Data preparation is over, we can go the data visualization section. Resulting geojson (poi, iris ad communes) are exported in three separated geojson. These files are available in the [Github repository](https://github.com/rysebaert/climbing_paris/tree/main/data-conso).
 
 ```{r, eval = FALSE}
 st_write(com, "data-conso/com.geojson")
 st_write(iris, "data-conso/iris.geojson")
 st_write(poi, "data-conso/poi.geojson")
 ```
+
+
+## Session info (R)
+```{r, echo=FALSE, message=FALSE}
+library(osmdata)
+library(osrm)
+library(sf)
+library(mapsf)
+library(rmapshaper)
+library(readxl)
+
+sessionInfo()
+```
+
+
+
+
+# Data visualization with Observable JavaScript (ojs)
+
+Observable is a startup founded by Mike Bostock and Melody Mechfessel, who initiated an on-line plateform to collaboratively explore, analyze, visualize and communicate with data on the Web.
+
+The computing language is [Observable JavaScript (ojs)](https://observablehq.com/\@observablehq/observables-not-javascript). It is possible to include this programming language in Quarto chunks.
+
+This section imports some visualizations realized in an [Observable collection](https://observablehq.com/collection/\@rysebaert/climbing_paris). Have a look to this resource to see the overall project ! 
+
+
+## Import consolidated data 
+
+Geojson files coming from the data preparation precessing realized in a R programming language and described above are imported.
+
+```{ojs}
+iris = FileAttachment("data-conso/iris.geojson").json()
+poi = FileAttachment("data-conso/poi.geojson").json()
+com = FileAttachment("data-conso/com.geojson").json()
+```
+
+Bertin.js (@bertin) and geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
+
+```{ojs}
+bertin = require('bertin@0.9.16')
+view = require("geoverview@1.2").then((f) => f.view)
+```
+
+
+## Layers attributes and metadata
+
+Three geographical layers will be used :
+
+- **iris** : IRIS intersecting the study area (polygons layer).
+- **poi** : climbing structures included the study area (points layer).
+- **com** : Muncipilaties interesecting thhe study area (polygons layer). This layer will only be used for the map layout and better understand the location of the poi and iris layers : IRIS, the lowest territorial division in France, is not really known by the population. 
+
+The first two geographical layers include attributes coming from the data preparation process, that will be mapped and ploted in the next section of the document. In this part, we present the layers in several ways to understand the information we have in hand for producing the data visualization. 
+
+### Interactive map
+
+Made with geoverview library. Click on the points / polygons to have an overview of their respective attributes and values.
+
+```{ojs}
+data = new Map([
+  ["Climbing areas (dots)", poi],
+  ["IRIS (polygons)", iris],
+  ["Layout municipalities (polygons)", com]
+])
+viewof geojson = Inputs.select(data, { label: "Select a geojson" })
+viewof style = Inputs.select(["voyager", "night", "fulldark","positron","icgc","osmbright","hibrid"], { label: "Select a style" })
+map2 = view(geojson, {
+  style: style
+})
+```
+
+### Attributes and metadata
+
+**Attribute table (iris layer)** 
+
+```{ojs}
+Inputs.table(iris.features.map((d) => d.properties))
+```
+
+**Indicators definition (iris layer)**
+
+| id          | Description                                                                                                                 | Data source                                       |
+|-------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------|
+| CODE_IRIS   | IRIS code                                                                                                                   | INSEE, IGN                                        |
+| NOM_IRIS    | IRIS Name                                                                                                                   | INSEE, IGN                                        |
+| TYP_IRIS    | IRIS type (H for dwellings)                                                                                                 | INSEE, IGN                                        |
+| P18_POP     | Population in 2018                                                                                                          | INSEE                                             |
+| DISP_MED19  | Disposable median income in 2019                                                                                            | INSEE                                             |
+| ALL_NAME    | Name of the nearest artificial climbing area reachable by bike (all structures)                                             | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| TYPE_STRUCT | Manager of the nearest artificial climbing area reachable by bike (private, FSGT or FFME)                                   | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| ALL_TIME    | Time by bike to reach the nearest artificial climbing area.                                                                 | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| N_15MN      | Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (all structures)                           | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| PRIV_NAME   | Name of the nearest artificial climbing area by bike (Private structure)                                                    | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| PRIV_TIME   | Time by bike to reach the nearest artificial climbing area (Private structure)                                              | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| N_PRIV_15MN | Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (private structures)                       | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| FFME_NAME   | Name of the nearest artificial climbing area by bike (Associative structure, federation : FFME)                             | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| FFME_TIME   | Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FFME)                       | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| N_FFME_15MN | Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FFME) | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| FSGT_NAME   | Name of the nearest artificial climbing area by bike (Associative structure, federation : FSGT)                             | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| FSGT_TIME   | Time by bike to reach the nearest artificial climbing area (Associative structure, federation : FSGT)                       | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| N_FSGT_15MN | Number of climbing areas accessible in 15 minutes by bike from the IRIS centroid (Associative structure, federation : FSGT) | (c)OpenStreetMap and contributors, Ronan Ysebaert |
+
+
+**Attribute table (poi layer)** 
+
+```{ojs}
+Inputs.table(poi.features.map((d) => d.properties))
+```
+
+**Indicators definition (poi layer)**
+
+| id              | Description                                                                                                                                                                                       | Data source                                              |
+|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| osm_id          | OpenStreetMap identifier (responding to the query sport=climbing in the bounding box of the study area)                                                                                           | (c)OpenStreetMap and contributors                        |
+| name            | Name of the artificial climbing area                                                                                                                                                              | (c)OpenStreetMap and contributors                        |
+| climbing_type   | If the articial climbing area is a wall (need a rope to climb), dedicated to bouldering, or both                                                                                                  | (c)OpenStreetMap and contributors, Ronan Ysebaert        |
+| climbing_length | Max. height of the wall (if adapted, for walls and not for bouldering)                                                                                                                            | (c)OpenStreetMap and contributors                        |
+| climbing_routes | Number of climbing routes, materialized by belay station (if adapted, for walls and not for bouldering). Note that in artificial climbing, a same belay station can serve several climbing routes | (c)OpenStreetMap and contributors                        |
+| type            | If the climbing area is speculative (manage by a private brand) or associative                                                                                                                    | (c)OpenStreetMap and contributors, Ronan Ysebaert        |
+| federation      | Name of the manager (FFME, FSGT or private)                                                                                                                                                       | (c)OpenStreetMap and contributors, Ronan Ysebaert        |
+| brand           | Name of the brand managing the private structure                                                                                                                                                  | (c)OpenStreetMap and contributors                        |
+| SUM_POP18       | Population at less than 15 minutes by bike of the artificial climbing area (IRIS centroids).                                                                                                      | INSEE, (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| MIN_REV19       | Mininum of the median income for the IRIS located at less than 15 minutes by bike                                                                                                                 | INSEE, (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| MOY_REV19       | Mean of the Median income for the IRIS located at less than 15 minutes by bike                                                                                                                    | INSEE, (c)OpenStreetMap and contributors, Ronan Ysebaert |
+| MAX_REV19       | Maximum of the Median income for the IRIS located at less than 15 minutes by bike                                                                                                                 | INSEE, (c)OpenStreetMap and contributors, Ronan Ysebaert |
+
+## Wall's characteristics
+
+This interactive map displays the artificial climbing offer in Paris and its surroundings, according artificial climbing specificities: top rope climbing (walls) / bouldering, climbing height, number of routes, manager of the articial climbing area.
+
+```{ojs}
+//Manage map projection
+lambert93 = "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+
+// Map parameters to play with it
+viewof ind = Inputs.radio(["climbing_length", "climbing_routes"], {label: "Wall height / Number of routes", value: "climbing_length"})
+viewof k = Inputs.range([10, 300], { label: "Spikes height", step: 1, value: 90 })
+viewof w = Inputs.range([2, 30], { label: "Spikes / dots width", step: 1, value: 15 })
+
+// Spike map 
+map = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      type: "spikes",
+      geojson: poi,
+      values: ind,
+      fillOpacity: 0.2,
+      k: k,
+      w: w,
+      fill: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"],
+        leg_title: `Wall's managers`,
+        leg_x: 600,
+        leg_y: 550
+      },
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"]
+      },
+      leg_x: 15,
+      leg_y: 15,
+      leg_round: 0,
+      leg_title: `Height (meters) or routes number`,
+      tooltip: {
+        fields: [
+          "$name",
+          "$climbing_length",
+          "(height in meters)",
+          "$climbing_routes",
+          "(nb. routes)",
+          "$federation",
+          "(manager)"
+        ],
+        fill: ["black", "black", "black", "black", "black", "black", "black"],
+        fontWeight: [
+          "bold",
+          "normal",
+          "normal",
+          "normal",
+          "normal",
+          "normal",
+          "normal"
+        ],
+        fontSize: [14, 12, 10, 12, 10, 12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      geojson: poi,
+      symbol_size: 10 * w,
+      symbol: "circle",
+      fill: {
+        type: "typo",
+        values: "climbing_type",
+        colors: ["white", "lightgrey", "grey"],
+        leg_title: `Climbing type`,
+        leg_x: 600,
+        leg_y: 430
+      },
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"]
+      },
+      strokeWidth: 2,
+      tooltip: {
+        fields: ["$name", "$climbing_type"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      type: "text",
+      position: "topright",
+      text: "Climbing hot spots",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "white",
+      fill: "peachpuff",
+      tooltip: ["$NOM_COM"]
+    },
+
+    {
+      type: "scalebar",
+      units: "miles"
+    },
+
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
+
+
+## Nearest wall
+
+The nearest climbing area by bike from each populated IRIS by wall manager: private or associative (FSGT or FFME).
+
+```{ojs}
+map = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      geojson: poi,
+      symbol_size: 100,
+      symbol: "circle",
+      fill: "white",
+      strokeWidth: 2.5,
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"]
+      },
+      
+      tooltip: {
+        fields: ["$name", "$federation"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10],
+        col: "white"
+      }
+    },
+      
+    {
+      type: "text",
+      position: "topright",
+      text: "Nearest climbing area\nmanager",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "black",
+      fill: "none"
+    },
+
+    {
+      type: "layer",
+      geojson: iris,
+      fill: {
+        type: "typo",
+        values: "TYPE_STRUCT",
+        strokeWidth: 0.3,
+        colors: ["#fcb45680", "#ba0b2580", "#9990f080"],
+        leg_title: `Manager name`,
+        leg_x: 15,
+        leg_y: 15,
+        col_missing: "lightgrey",
+        txt_missing: "Non dedicated to housing"
+      },
+      tooltip: {
+        fields: [
+          "$NOM_IRIS",
+          "$ALL_NAME",
+          "Name of the nearest artificial climbing structure"
+        ],
+        fill: "white",
+        fontWeight: ["bold", "normal", "normal"],
+        fontSize: [11, 10, 8],
+        col: ["black", "black", "black"]
+      }
+    },
+
+    {
+      type: "scalebar",
+      units: "miles",
+    },
+    
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
+
+## Time to climb
+
+
+
+
+# Concluding methodological remarks
+
+## Extend the analysis
+
+This methodological example showed a general methodology to combine institutional and crowd-sourced data to develop some simple indicators of accessibility to services of interest using open-source routing engines, and disseminate this with data visualizations frameworks. It is one possible implementation, among others. Other implementations could easily be envisaged. 
+
+- **Geographical coverage**: The data preparation process presented above requires the definition of a geographical bounding box to extract OpenStreetMap points of interest (destinations of travel-time calculations) and an existing territorial division (the centroids being the origins of the travel-time calculations). This could be easily extented to other areas of interest, by modifying the Xmin, Xmax, Ymin and Ymax of the bounding box, or using other territorial divisions (a regular grid, for instance). The important things to consider is  
+- **Use other points of interest**:  This example used the OpenStreetMap tag defined by the key-value `sport=climbing`. Other [map features](https://wiki.openstreetmap.org/wiki/Map_features) could be investigated, such as [amenities](https://wiki.openstreetmap.org/wiki/Key:amenity), [tourism facilities](https://wiki.openstreetmap.org/wiki/Map_features#Tourism) or [shops](https://wiki.openstreetmap.org/wiki/Map_features#Shop). The only element to consider is the geometric reference of the object in the OpenStreetMap database ; it could be nodes, ways or relations. In the case of sport=climbing tag, the [OpenStreetMap Wiki](https://wiki.openstreetmap.org/wiki/Tag%3Asport%3Dclimbing) reminds that *sport=climbing should preferably applied to nodes for artificial climbing walls*, our case. If the tag combines nodes and areas, it requires also to extract polygons responding to the tag and transform it into points, checking if the information is not included twice in the OpenStreetMap database.   
+- **Apply other profiles**: In this example, the standard bike profile has been applied. The pedestrian and the car profile are also available and may be also used depending on the objective of the analysis. Whatever the profile used, it reminds important to the parameters of the profiles ([car here](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/car.lua), [bike here](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/bicycle.lua) and [pedestrian here](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/foot.lua)) to understand the calculations realized with routing engines, and their limitations. It is also possible to implement its [own profile](https://github.com/Project-OSRM/osrm-backend/blob/master/docs/profiles.md). 
+
+
+## Usage precautions
+
+One persisting criticism made to OpenStreetMap is its lack of quality, mainly due to its general and contributive organisations implying a high heterogeneity of contribution practices. Known problems are due to [geometric accuracy](https://wiki.openstreetmap.org/wiki/Accuracy) (geographical positioning of OSM objects), completeness
+[accuracy](https://wiki.openstreetmap.org/wiki/Accuracy) and [completeness](https://wiki.openstreetmap.org/wiki/Completeness) (missing information, not up-to-date) or problems due to the [tags](https://wiki.openstreetmap.org/wiki/Category:Tagging_Mistakes) describing OSM objects (missing important tags, bad practices). 
+
+In that case, I made a personal survey to complete missing information (around 30 % of the information was missing) in OpenStreetMap database. It meant add some missing points in some cases, and in others to describe it with [relevant climbing tags](https://wiki.openstreetmap.org/wiki/Climbing) identified in the OpenStreetMap Wiki. At the end, it is sure that the input information is not perfect and would require double-checks by the community, but we can argue that it was not worst than in the begginning. 
+
+**Whatever the use of OpenStreetMap you may made, taking a step back to these questions is very important to control** ***a minima*** **the input information used for the travel-time calculations**.  
+
+Another point to have in mind is the default parameters of osrm profiles: bike profile does not take into account the slope of the road ; the car profile does not take into account the trafic congestion. It may have significant impact on the travel-time calculations. 
+
+Nevertheless, we argue that OpenStreetMap is a wonderful initiative and as we try to demonstrate in this notebook, it is not too difficult to produce innovative indicators and data visualizations using open-source database and libraries. 
+
+Enjoy ! 
+
+
+# References
+
