@@ -20,7 +20,7 @@ format:
     css: "styles.css"
 ---
 
-**Work in progress**
+**This documentation is in progress and may evolve in a near future... Sorry for the tips it may include !**
 
 The aim of this document consists in showing how to build, visualize and reproduce accessibility indicators by combining points of interest (POI) coming from the OpenStreetMap database, socio-economic indicators included in small territorial division (IRIS) and routing engines (OSRM).
 
@@ -28,13 +28,17 @@ The graphical outputs displayed in this notebook are also available in an [Obser
 
 To introduce the reader to the issues raised by indoor sport-climbing in Paris, have a look to [this notebook](https://observablehq.com/d/d2be39c4dd55a32d?collection=@rysebaert/climbing_paris "Go to Observable Notebook").
 
-This Quarto document combines 2 computer languages : R for data processing, and D3.js for data visualizations.
+This Quarto document combines 2 programming languages : R for data processing, and ObservableJS for data visualizations.
+
+
 
 # Data processing with R
 
+The entire R script can be found [here](https://github.com/rysebaert/climbing_paris/blob/main/script.R).
+
 ## Data sources
 
-Three data providers are used to build the consolidated data of this document.
+Three data sources, coming from three data providers, will be used:
 
 -   **IGN** : [The Contour...IRIS® édition 2020](https://geoservices.ign.fr/contoursiris "Access to input geometries (France)"), which corresponds to the lowest territorial division in France (below the commune level).
 
@@ -42,7 +46,7 @@ Three data providers are used to build the consolidated data of this document.
 
 -   **OpenStreetMap** : download of Point Of Interest (POI) and travel time calculation by bike between IRIS centroids and POI, using the [OSRM routing engine](http://project-osrm.org/ "Access to OSRM Website").
 
-Input data is not provided in the Github repository (too large files), but can be easily be downloaded.
+Input data is not provided in the [GitHub repository](https://github.com/rysebaert/climbing_paris) (too large files), but can easily be downloaded and used (no constraints of use).
 
 ## Map layout
 
@@ -510,6 +514,8 @@ The computing language is [Observable JavaScript (ojs)](https://observablehq.com
 
 This section imports some visualizations realized in an [Observable collection](https://observablehq.com/collection/\@rysebaert/climbing_paris). Have a look to this resource to see the overall project ! 
 
+All the maps produced below use the bertin.js library. Have a look to the excellent documentation in its [npm repository](https://www.npmjs.com/package/bertin) or in this [Observable Collection](https://observablehq.com/collection/@neocartocnrs/bertin) to see the possibilities offered by this library to the map creator ! 
+
 
 ## Import consolidated data 
 
@@ -519,6 +525,7 @@ Geojson files coming from the data preparation precessing realized in a R progra
 iris = FileAttachment("data-conso/iris.geojson").json()
 poi = FileAttachment("data-conso/poi.geojson").json()
 com = FileAttachment("data-conso/com.geojson").json()
+iris15 = FileAttachment("data-conso/iris15.geojson").json()
 ```
 
 Bertin.js (@bertin) and geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
@@ -551,7 +558,7 @@ data = new Map([
 ])
 viewof geojson = Inputs.select(data, { label: "Select a geojson" })
 viewof style = Inputs.select(["voyager", "night", "fulldark","positron","icgc","osmbright","hibrid"], { label: "Select a style" })
-map2 = view(geojson, {
+map = view(geojson, {
   style: style
 })
 ```
@@ -624,8 +631,8 @@ viewof ind = Inputs.radio(["climbing_length", "climbing_routes"], {label: "Wall 
 viewof k = Inputs.range([10, 300], { label: "Spikes height", step: 1, value: 90 })
 viewof w = Inputs.range([2, 30], { label: "Spikes / dots width", step: 1, value: 15 })
 
-// Spike map 
-map = bertin.draw({
+// Spike map with tooltips
+map1 = bertin.draw({
   params: {
     width: 750,
     projection: lambert93,
@@ -750,7 +757,8 @@ map = bertin.draw({
 The nearest climbing area by bike from each populated IRIS by wall manager: private or associative (FSGT or FFME).
 
 ```{ojs}
-map = bertin.draw({
+// Categorical map with tooltips
+map2 = bertin.draw({
   params: {
     width: 750,
     projection: lambert93,
@@ -841,6 +849,478 @@ map = bertin.draw({
 ```
 
 ## Time to climb
+
+It displays the time by bike required to reach the nearest climbing area, for all structures or by manager type. 
+
+```{ojs}
+// Map parameters to play with it
+// select indicator
+viewof ind2 = Inputs.radio(["ALL_TIME", "PRIV_TIME", "FSGT_TIME", "FFME_TIME"],
+{value: "ALL_TIME"})
+
+// Discretization method
+viewof method2 = Inputs.select(["jenks", "q6", "quantile", "equal", "msd"], {
+  label: "method",
+  value: "quantile"
+})
+
+// nbreaks
+viewof nbreaks2 = Inputs.range([3, 9], { label: "nbreaks", step: 1, value: 8 })
+
+// color palettes
+viewof pal2 = Inputs.select(
+  ["Blues",  "Greens",  "Greys", "Oranges", "Purples", "BuGn", "BuPu", "GnBu",
+  "OrRd", "PuBuGn", "PuBu", "PuRd", "RdPu", "YlGnBu", "YlGn", "YlOrBr", "YlOrRd",
+  "BrBG", "PRGn", "PiYG", "PuOr", "RdBu", "RdGy", "RdYlBu", "RdYlGn", "Spectral" ],
+  {
+    label: "colors",
+    value: "RdYlBu"
+  }
+)
+
+// Choropleth map with tooltips
+map3 = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      geojson: poi,
+      symbol_size: 100,
+      symbol: "circle",
+      fill: "white",
+      strokeWidth: 2.5,
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"]
+      },
+      tooltip: {
+        fields: ["$name", "$federation"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      type: "text",
+      position: "topright",
+      text: "Time to reach the nearest\nartificial climbing area",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "black",
+      fill: "none"
+    },
+
+    {
+      type: "layer",
+      geojson: iris,
+      fill: {
+        type: "choro",
+        values: ind2,
+        nbreaks: 8,
+        method: method2,
+        colors: pal2,
+        leg_round: 2,
+        leg_title: `By bike (minutes)`,
+        leg_x: 15,
+        leg_y: 15,
+        col_missing: "lightgrey",
+        txt_missing: "Non dedicated to housing"
+      },
+      tooltip: {
+        fields: [
+          "$NOM_IRIS",
+          "$NOM_COM",
+          "$ALL_TIME",
+          "Bike time to the nearest Indoor climbing area"
+        ],
+        fill: "white",
+        fontWeight: ["bold", "normal", "normal", "normal"],
+        fontSize: [11, 11, 10, 8],
+        col: ["black", "black", "black", "black"]
+      }
+    },
+
+    {
+      type: "scalebar",
+      units: "kilometers",
+    },
+    
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
+
+## Climbing in 15 minutes?
+
+The number of climbing areas reachable in 15 minutes by bike from the geometric centroid of each IRIS of the study area.
+
+```{ojs}
+// Map parameters to play with it
+// select indicator
+viewof ind4 = Inputs.radio(["N_15MN", "N_PRIV_15MN", "N_FSGT_15MN", "N_FFME_15MN"],
+{label: "Number - all / private / FSGT / FFME - indoor climbing areas at less than 15 minutes", value: "N_15MN"})
+
+// color palettes
+viewof pal4 = Inputs.select(
+  ["Blues", "Greens", "Greys", "Oranges", "Purples", "BuGn", "BuPu", "GnBu", 
+  "OrRd", "PuBuGn", "PuBu", "PuRd", "RdPu",
+  ],
+  {
+    label: "colors",
+    value: "Greens"
+  }
+)
+
+// choropleth map with tooltips
+map4 = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      geojson: poi,
+      symbol_size: 100,
+      symbol: "circle",
+      fill: "white",
+      strokeWidth: 2.5,
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"]
+      },
+      
+      tooltip: {
+        fields: ["$name", "$federation"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10],
+        col: "white"
+      }
+    },
+      
+    {
+      type: "text",
+      position: "topright",
+      text: "Number of climbing areas reachable\nin less than 15 minutes",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "black",
+      fill: "none"
+    },
+
+    {
+      type: "layer",
+      geojson: iris,
+      fill: {
+        type: "choro",
+        values: ind4,
+        breaks: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        colors: pal4,
+        leg_round: 2,
+        leg_title: `Structures numbers`,
+        leg_x: 15,
+        leg_y: 15,
+        col_missing: "lightgrey",
+        txt_missing: "Non dedicated to housing"
+      },
+      tooltip: {
+        fields: [
+          "$NOM_IRIS",
+          "$N_15MN",
+          "Climbing areas at less than 15 minutes by bike"
+        ],
+        fill: "white",
+        fontWeight: ["bold", "normal", "normal"],
+        fontSize: [11, 10, 8],
+        col: ["black", "black", "black"]
+      }
+    },
+
+    {
+      type: "scalebar",
+      units: "miles",
+    },
+    
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
+
+
+## Demographic neighbourhood
+
+Visualize the demographic neighbourhood of each climbing area : IRIS population at less than 15 minutes by bike from each climbing area.
+
+```{ojs}
+// Map parameters to play with it
+// Circle radius
+viewof k5 = Inputs.range([1, 100], { label: "radius max", step: 1, value: 18 })
+
+// Proportional map and tooltips
+map5 = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      geojson: poi,
+      type: "bubble",
+      k: k5,
+      values: "SUM_POP18",
+      leg_title: `Population in 15mn by bike neighbourhood`, 
+      leg_x: 15,
+      leg_y: 15,
+      leg_round: -2,
+      fill: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"],
+        leg_title: `Wall's managers`,
+        leg_x: 600,
+        leg_y: 550
+      },
+      strokeWidth: 2.5,
+      stroke: "white",
+      tooltip: {
+        fields: ["$name", "$federation", "$SUM_POP18", "(Inhabitants in 15mn by bike neighbourhood)"],
+        fill: ["black", "black", "black", "black"],
+        fontWeight: ["bold", "normal", "normal", "normal"],
+        fontSize: [14, 12, 12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      type: "text",
+      position: "topright",
+      text: "Population\nin climbing area's neighbourhood",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "black",
+      fill: "none"
+    },
+
+    {
+      type: "layer",
+      geojson: iris15,
+      fill: "peachpuff",
+      tooltip: {
+        fields: [
+          "$NOM_IRIS",
+          "$NOM_COM",
+          "$P18_POP",
+          "Total population (2018)"
+        ],
+        fill: "white",
+        fontWeight: ["bold", "normal", "normal", "normal"],
+        fontSize: [11, 11, 10, 8],
+        col: ["black", "black", "black", "black"]
+      }
+    },
+
+    {
+      type: "scalebar",
+      units: "kilometers",
+    },
+    
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+
+```
+
+## Income neighbourhood
+
+Visualize the level of wealth of each climbing area neighbourhood : IRIS median income at less than 15 minutes by bike from a climbing area. User can choose the minimum income, average income or maximum income of the IRIS at less than 15 minutes.
+
+```{ojs}
+// Map parameters to play with it
+// select indicator
+viewof ind6 = Inputs.radio(["MIN_REV19", "MOY_REV19", "MAX_REV19"], {label: "Min/average/max median income in a 15 minutes by bike neighbourhood", value: "MOY_REV19"})
+
+// Discretization method
+viewof method6 = Inputs.select(["jenks", "q6", "quantile", "equal", "msd"], {
+  label: "method",
+  value: "quantile"
+})
+
+// Nbreaks
+viewof nbreaks6 = Inputs.range([3, 9], { label: "nbreaks", step: 1, value: 6 })
+
+// Color palette
+viewof pal6 = Inputs.select(
+  ["Blues", "Greens", "Greys", "Oranges", "Purples", "BuGn", "BuPu", "GnBu",
+  "OrRd", "PuBuGn", "PuBu", "PuRd", "RdPu", "YlGnBu", "YlGn", "YlOrBr", 
+  "YlOrRd", "BrBG", "PRGn", "PiYG", "PuOr", "RdBu", "RdGy", "RdYlBu", "RdYlGn",
+  "Spectral"
+  ],
+  {
+    label: "colors",
+    value: "PuOr"
+  }
+)
+
+// IRIS layer opacity
+viewof opacity6 = Inputs.range([0, 1], {label: "IRIS income opacity", step: 0.1})
+
+
+// Resulting map with a lot of things :) 
+map6 = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      geojson: poi,
+      symbol_size: 300,
+      symbol: "triangle",
+      fill: {
+        type: "choro",
+        values: ind6,
+        nbreaks: nbreaks6,
+        method: method6,
+        colors: pal6,
+      },
+      strokeWidth: 2.5,
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"],
+        leg_title: `Wall's managers`,
+        leg_x: 600,
+        leg_y: 550
+      },
+      tooltip: {
+        fields: ["$name", "$federation", "$MIN_REV19", "(Minimum income in 15mn by bike neighbourhood)", "$MOY_REV19", "(Average income in 15mn by bike neighbourhood)", "$MAX_REV19", "(Average income in 15mn by bike neighbourhood)"],
+        fill: ["black", "black", "black", "black", "black", "black", "black", "black"],
+        fontWeight: ["bold", "normal", "normal", "normal", "normal", "normal", "normal", "normal"],
+        fontSize: [14, 12, 12, 10, 12, 10, 12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      type: "text",
+      position: "topright",
+      text: "Income\nin climbing area's neighbourhood",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "black",
+      fill: "none"
+    },
+
+    {
+      type: "layer",
+      geojson: iris15,
+      fill: {
+        type: "choro",
+        values: "DISP_MED19",
+        nbreaks: nbreaks6,
+        method: method6,
+        colors: pal6,
+        leg_round: -2,
+        leg_title: `Median income (2019, euros)\nfor IRIS at less than 15km by bike\nfrom a climbing area`,
+        leg_x: 15,
+        leg_y: 15,
+        col_missing: "lightgrey",
+        txt_missing: "Non dedicated to housing"
+      },
+      fillOpacity: opacity6,
+      tooltip: {
+        fields: [
+          "$NOM_IRIS",
+          "$NOM_COM",
+          "$DISP_MED19",
+          "Median income (2019, euros)"
+        ],
+        fill: "white",
+        fontWeight: ["bold", "normal", "normal", "normal"],
+        fontSize: [11, 11, 10, 8],
+        col: ["black", "black", "black", "black"]
+      }
+    },
+
+    {
+      type: "scalebar",
+      units: "kilometers",
+    },
+    
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
 
 
 
