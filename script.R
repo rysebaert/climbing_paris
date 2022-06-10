@@ -1,3 +1,17 @@
+#############################################################################
+#                  OSRM TRAVEL-TIME CALCULATION WITH R                      #
+#  APPLICATION TO ARTIFICIAL CLIMBING WALLS IN PARIS AND ITS NEIGHBOURHOOD  #
+#                        R. YSEBAERT, JUNE 2022                             #
+#############################################################################
+
+# Sources files (in data-raw folder, not included in the github repo)
+# IRIS géométries (édition 2020) : https://geoservices.ign.fr/contoursiris
+# IRIS income : https://www.insee.fr/fr/statistiques/6049648
+# IRIS population : https://www.insee.fr/fr/statistiques/5650720?sommaire=4658626 
+
+# Documented script (Quarto Notebook) : https://rysebaert.github.io/climbing_paris/
+
+
 # 1. Map layout preparation at IRIS scale (source IGN)----
 library(sf)
 iris <- st_read("data-raw/CONTOURS-IRIS.shp", quiet = TRUE)
@@ -101,7 +115,7 @@ library(osrm)
 # Manage ids
 row.names(ori) <- ori$CODE_IRIS
 
-# Connexion to osrm local server
+# Connexion to osrm local server (the osrm container must running under docker)
 options(osrm.server = "http://localhost:5000/", osrm.profile = "bike")
 
 # Origin-destination calculation
@@ -133,7 +147,7 @@ write.csv(df3, "data-conso/bike-duration-ffme.csv")
 dest_fsgt <- dest_asso[dest_asso$federation == "FSGT",]
 df4 <- osrmTable(src = ori, dst = dest_fsgt, measure = "duration")
 df4 <- data.frame(df4$duration)
-colnames(df4) <- as.character(poi_fsgt$osm_id)
+colnames(df4) <- as.character(dest_fsgt$osm_id)
 row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
 
@@ -289,7 +303,6 @@ for (i in 1:nrow(t.df)){
 poi <- merge(poi, poi_socio, by = "osm_id", all.x = TRUE)
 
 # Correct MurMur and Rename ESC15
-poi[17,"climbing_routes"] <- 100
 poi[17,"climbing_length"] <- 17
 
 poi[16,"name"] <- "ESC 15 - La Plaine"
@@ -298,7 +311,6 @@ poi[31,"name"] <- "ESC 15 - Croix Nivert"
 # 7. Simplify geometries for data visualization
 library(rmapshaper)
 iris <- ms_simplify(iris, keep = 0.09)
-parc <- ms_simplify(parc, keep = 0.09)
 
 # Communes aggregation (layout)
 com <- aggregate(iris[,c("NOM_COM")],
@@ -308,7 +320,6 @@ com <- aggregate(iris[,c("NOM_COM")],
 # Extract IRIS at less than 15 minutes by bike
 iris15 <- iris[iris$ALL_TIME < 15,]
 iris15 <- iris15[!is.na(iris15$ALL_TIME),]
-
 
 st_write(com, "data-conso/com.geojson")
 st_write(iris, "data-conso/iris.geojson")
@@ -342,6 +353,3 @@ df <- data.frame(TIME, TYPE)
 
 data_iris <- rbind(data_iris, df)
 write.csv(data_iris, "data-conso/time_federation_iris.csv")
-
-test <- read.csv("data-conso/time_federation_iris.csv")
-levels(as.factor(test$TYPE))
