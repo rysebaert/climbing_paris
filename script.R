@@ -113,6 +113,7 @@ poi <- st_transform(poi, 4326)
 # 4. Origin - Destination calculation with OSRM ----
 library(osrm)
 
+## 4.1 IRIS to climbing areas----
 # Manage ids
 row.names(ori) <- ori$CODE_IRIS
 
@@ -152,6 +153,16 @@ colnames(df4) <- as.character(dest_fsgt$osm_id)
 row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
 
+## 4.2 A bike trip to visit all the FSGT climbing areas ? ----
+# Keep only climbing areas in the study area
+dest_fsgt <- st_transform(dest_fsgt, 2154)
+dest_fsgt <- st_intersection(dest_fsgt, paris)
+dest_fsgt <- st_transform(dest_fsgt, 4326)
+
+trip <- osrmTrip(loc = dest_fsgt)
+trip <- trip[[1]]$trip
+sum(trip$distance)
+sum(trip$duration)
 
 # 5. Accessibility indicator creation (IRIS) ----
 # Name of the nearest structure
@@ -279,6 +290,7 @@ iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 
 
 
+
 # 6. Characterise the POI neighbourhood ----
 t.df <- data.frame(t(df))
 colnames(t.df) <- iris10k[iris10k$TYP_IRIS == "H",]$CODE_IRIS
@@ -326,7 +338,7 @@ st_write(com, "data-conso/com.geojson")
 st_write(iris, "data-conso/iris.geojson")
 st_write(iris15, "data-conso/iris15.geojson")
 st_write(poi, "data-conso/poi.geojson")
-
+st_write(trip, "data-conso/trip.geojson")
 
 # For plots
 ## Time * federation
