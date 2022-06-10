@@ -62,6 +62,7 @@ iris <- st_intersection(iris10k, paris5k)
 ori <- iris10k[iris10k$TYP_IRIS == "H",]
 ori <- st_centroid(ori)
 
+# Transofrm in long/lat
 ori <- st_transform(ori, crs = 4326)
 iris <- st_transform(iris, crs = 4326)
 
@@ -325,8 +326,6 @@ st_write(com, "data-conso/com.geojson")
 st_write(iris, "data-conso/iris.geojson")
 st_write(iris15, "data-conso/iris15.geojson")
 st_write(poi, "data-conso/poi.geojson")
-st_write(parc, "data-conso/parc.geojson")
-st_write(river, "data-conso/river.geojson")
 
 
 # For plots
