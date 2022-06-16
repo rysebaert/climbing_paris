@@ -153,16 +153,80 @@ colnames(df4) <- as.character(dest_fsgt$osm_id)
 row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
 
-## 4.2 A bike trip to visit all the FSGT climbing areas ? ----
+
+## 4.2 Isochrones from a regular grid to climbing areas ----
+# Compute travel time from grid to climbing areas
+# Create grid and extract centroids (cell size = 150 m)
+mygrid <- st_make_grid(paris5k, cellsize = 150)
+mygrid <- st_centroid(mygrid)
+mygrid <- st_sf(ID = 1:length(mygrid), geometry = mygrid)
+
+dest <- st_transform(dest, 2154)
+dest_priv <- dest[dest$type == "Speculative structure",] 
+dest_fsgt <- dest[dest$federation == "FSGT",]
+
+# Compute travel time from grid centroids to all climbing areas
+df5 <- osrmTable(src = mygrid, dst = dest, measure = "duration")
+df5 <- data.frame(df5$duration)
+write.csv(df5, "data-conso/grid-bike-duration.csv", row.names = FALSE)
+df5 <- read.csv("data-conso/grid-bike-duration.csv")
+colnames(df5) <- as.character(dest$osm_id)
+time <- data.frame(mygrid$ID, apply(df5, 1, min)) # find minimum value
+colnames(time) <- c("ID", "TIME_ALL")
+mygrid <- merge(mygrid, time, by = "ID", all.x = TRUE) # merge time to grid
+
+# Compute travel time from grid centroids to private climbing areas
+df6 <- osrmTable(src = mygrid, dst = dest_priv, measure = "duration")
+df6 <- data.frame(df6$duration)
+write.csv(df6, "data-conso/grid-bike-duration_priv.csv", row.names = FALSE)
+df6 <- read.csv("data-conso/grid-bike-duration_priv.csv")
+colnames(df6) <- as.character(dest_priv$osm_id)
+time <- data.frame(mygrid$ID, apply(df6, 1, min)) # find minimum value
+colnames(time) <- c("ID", "TIME_PRIV")
+mygrid <- merge(mygrid, time, by = "ID", all.x = TRUE) # merge time to grid
+
+# Compute travel time from grid centroids to FSGT climbing areas
+df7 <- osrmTable(src = mygrid, dst = dest_fsgt, measure = "duration")
+df7 <- data.frame(df7$duration)
+write.csv(df7, "data-conso/grid-bike-duration_fsgt.csv", row.names = FALSE)
+df7 <- read.csv("data-conso/grid-bike-duration_fsgt.csv")
+colnames(df7) <- as.character(dest_fsgt$osm_id)
+time <- data.frame(mygrid$ID, apply(df7, 1, min)) # find minimum value
+colnames(time) <- c("ID", "TIME_FSGT")
+mygrid <- merge(mygrid, time, by = "ID", all.x = TRUE) # merge time to grid
+
+# Export grid 
+st_write(mygrid, "data-conso/mygrid.geojson")
+mygrid <- st_read("data-conso/mygrid.geojson")
+com <- st_read("data-conso/com.geojson")
+com <- st_transform(com, 2154)
+
+# Compute isochrones
+# define breaks (based on quantie analysis)
+library(potential)
+
+thr <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, max(mygrid$TIME_FSGT))
+iso_all <- equipotential(x = mygrid, var = "TIME_ALL", breaks = thr,  mask = paris5k)
+iso_fsgt <- equipotential(x = mygrid, var = "TIME_FSGT", breaks = thr,  mask = paris5k)
+iso_priv <- equipotential(x = mygrid, var = "TIME_PRIV", breaks = thr,  mask = paris5k)
+
+# Transform in 4326 for observable integration
+iso_all <- st_transform(iso_all, 4326)
+iso_fsgt <- st_transform(iso_fsgt, 4326)
+iso_priv <- st_transform(iso_priv, 4326)
+
+
+## 4.3 A bike trip to visit all the FSGT climbing areas ? ----
 # Keep only climbing areas in the study area
 dest_fsgt <- st_transform(dest_fsgt, 2154)
-dest_fsgt <- st_intersection(dest_fsgt, paris)
+dest_fsgt <- st_intersection(dest_fsgt, paris_5k)
 dest_fsgt <- st_transform(dest_fsgt, 4326)
 
 trip <- osrmTrip(loc = dest_fsgt)
 trip <- trip[[1]]$trip
 sum(trip$distance)
 sum(trip$duration)
+
 
 # 5. Accessibility indicator creation (IRIS) ----
 # Name of the nearest structure
@@ -339,6 +403,12 @@ st_write(iris, "data-conso/iris.geojson")
 st_write(iris15, "data-conso/iris15.geojson")
 st_write(poi, "data-conso/poi.geojson")
 st_write(trip, "data-conso/trip.geojson")
+st_write(iso_all, "data-conso/iso_all.geojson")
+st_write(iso_fsgt, "data-conso/iso_fsgt.geojson")
+st_write(iso_priv, "data-conso/iso_priv.geojson")
+st_write(trip, "data-conso/trip.geojson")
+
+
 
 # For plots
 ## Time * federation

@@ -1,23 +1,6 @@
 #############################################################################
 #                  TEST MULTI ISCOCHRONES
 
-rgrid <- function(loc, dmax, res){
-  # create a regular grid centerd on loc
-  boxCoordX <- seq(from = sf::st_coordinates(loc)[1,1] - dmax,
-                   to = sf::st_coordinates(loc)[1,1] + dmax,
-                   length.out = res)
-  boxCoordY <- seq(from = sf::st_coordinates(loc)[1,2] - dmax,
-                   to = sf::st_coordinates(loc)[1,2] + dmax,
-                   length.out = res)
-  sgrid <- expand.grid(boxCoordX, boxCoordY)
-  sgrid <- data.frame(ID = seq(1, nrow(sgrid), 1),
-                      COORDX = sgrid[, 1],
-                      COORDY = sgrid[, 2])
-  sgrid <- sf::st_as_sf(sgrid,  coords = c("COORDX", "COORDY"),
-                        crs = st_crs(loc), remove = FALSE)
-  return(sgrid)
-}
-
 
 library(sf)
 iris <- st_read("data-raw/CONTOURS-IRIS.shp", quiet = TRUE)
@@ -32,6 +15,7 @@ paris <- paris[!paris$NOM_IRIS %in% c("Bois de Vincennes 1",
                                       "Bois de Boulogne 2",
                                       "Bois de Boulogne 3"),]
 paris <- st_union(paris)
+paris0 <- paris
 
 # 5 km around Paris map layout
 paris5k <- st_buffer(paris, 5000)
@@ -89,23 +73,36 @@ colnames(dest)[4:5] <- c("climbing_length", "climbing_routes")
 
 # Isochrones (heavy calculation)
 paris <- st_transform(paris, 2154)
-grid <- st_make_grid(paris, cellsize = 200)
-grid <- st_centroid(grid)
-grid <- st_sf(ID = 1:length(grid), geometry = grid)
-grid <- st_transform(grid, 4326)
+mygrid <- st_make_grid(paris5k, cellsize = 150)
+mygrid <- st_centroid(mygrid)
+mygrid <- st_sf(ID = 1:length(mygrid), geometry = mygrid)
+
+mygrid$COORDX <- st_coordinates(mygrid)[,1]
+mygrid$COORDY <- st_coordinates(mygrid)[,2]
+
+dest <- st_transform(dest, 2154)
+
+head(mygrid)
+head(dest)
 
 library(osrm)
 options(osrm.server = "http://localhost:5000/", osrm.profile = "bike")
+df5 <- osrmTable(src = mygrid, dst = dest, measure = "duration")
+
+
 # df5 <- osrmTable(src = grid, dst = dest, measure = "duration")
-# df5 <- data.frame(df5$duration)
-# colnames(df5) <- as.character(df5$osm_id)
-# row.names(df5) <- as.character(grid$ID)
+df5 <- data.frame(df5$duration)
+colnames(df5) <- as.character(dest$osm_id)
+row.names(df5) <- as.character(mygrid$ID)
 # write.csv(df5, "data-conso/grid-bike-duration.csv")
 # st_write(grid, "data-conso/grid.gpkg")
 
-grid <- st_read("data-conso/grid.gpkg")
+quantile(mygrid$time, probs = seq(0,1,0.1))
 
+grid <- st_read("data-conso/grid.gpkg")
 df5 <- read.csv("data-conso/grid-bike-duration.csv")
+df5 <- df5[,-1]
+
 colnames(df5) <- as.character(dest$osm_id)
 osm_id <- colnames(df5)[apply(df5, 1, which.min)] # Name
 osm_id <- data.frame(osm_id, stringsAsFactors = FALSE)
@@ -117,30 +114,108 @@ time <- data.frame(time, stringsAsFactors = FALSE)
 time$ID <- row.names(time)
 osm_id <- merge(osm_id, time, by = "ID", all.x = TRUE)
 head(osm_id)
-grid <- merge(grid, osm_id[,c("ID","time")], by = "ID", all.x = TRUE)
+mygrid <- merge(mygrid, osm_id[,c("ID","time")], by = "ID", all.x = TRUE)
 
 
-grid <- st_transform(grid, 2154)
-grid$COORDX <- st_coordinates(grid)[,1]
-grid$COORDY <- st_coordinates(grid)[,2]
-grid$OUTPUT <- grid$time
 
-#remotes::install_github("riatelab/potential")
+# remotes::install_github("riatelab/potential")
 library(potential)
-equipot <- equipotential(grid, var = "time", mask = iris)
 
-length(grid[["OUTPUT"]])
-length(unique(grid[["COORDX"]]))
-length(unique(grid[["COORDY"]]))
+osrm:::isopoly()
 
-brks <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, max(grid$time))
-head(grid)
-mf_map(x = grid, var = "OUTPUT", type = "choro", 
-       breaks = brks, border = NA,
-       leg_pos = "topleft", leg_frame = F,
-       leg_title = "Isochrones\n(min)",
-       leg_title_cex = 1, leg_val_cex = .8, 
-       add = F)
+mygrid$COORDX <- st_coordinates(mygrid)[,1]
+mygrid$COORDY <- st_coordinates(mygrid)[,2]
+brks <- c(0, 1, 2.5, 5,  10, 15, 20,30,max(mygrid$time))
+head(mygrid)
+iso <- equipotential(x = mygrid, var = "time", breaks = brks,  mask = paris5k,
+                     xcoords = "COORDX", ycoords = "COORDY")
+
+
+
+
+
+iso <- osrm:::isopoly(x = mygrid, var = "time", breaks = brks, mask = paris5k)
+
+
+
+
+
+head(paris0)
+
+cols <- mf_get_pal(n = c(4,4), pal = c("Reds 2", "Greens"))
+
+mf_map(paris5k, col = NA, add = T)
+
+head(iso)
+head(paris5k)
+
+library(mapsf) 
+mf_map(iso, var = "center", type = "choro", breaks = brks, pal = cols)
+
+library(rmapshaper)
+iso <- ms_simplify(iso, keep = .99)
+
+
+iso <- st_make_valid(iso)
+
+head(iso)
+
+
+ ??tanaka
+ 
+ osrmIsochrone
 
 library(mapsf)
-mf_map(grid)
+mf_map(grid, var = "time", type = "choro")
+mf_map(dest, pch = 21, bg = "red", add = TRUE)
+
+
+# Fix pb
+x = grid
+var = "time"
+xcoords = "COORDX"
+ycoords = "COORDY"
+
+length(unique(x[[xcoords]]))
+length(unique(x[[ycoords]]))
+441*470
+length(levels(as.factor(x[[xcoords]])))
+length(levels(as.factor(x[[ycoords]])))
+152*131
+
+
+
+
+m <- matrix(
+  data = x[[var]], nrow = length(unique(x[[xcoords]])),
+  dimnames = list(unique(x[[xcoords]]), unique(x[[ycoords]]))
+)
+
+m <- matrix(
+  data = x[[var]], nrow = length(unique(x[[xcoords]])),
+  dimnames = list(unique(x[[xcoords]]), unique(x[[ycoords]]))
+)
+
+
+
+
+
+
+# Vignette
+y <- create_grid(x = n3_poly, res = 100000)
+d <- create_matrix(x = n3_pt, y = y)
+y$pot <- potential(x = n3_pt, y = y, d = d,
+                   var = "POP19", fun = "e",
+                   span = 75000, beta = 2)
+y$pot2 <- 100 * y$pot / max(y$pot)
+iso <- equipotential(x = y, var = "pot2", breaks = seq(0,100, 10), mask = n3_poly)
+
+
+length(unique(y[["COORDX"]]))
+length(unique(y[["COORDY"]]))
+
+nrow(y)
+49*42
+
+dimnames(y)[2]
+head(y)
