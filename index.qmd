@@ -18,6 +18,7 @@ format:
     toc: true
     toc-depth: 2
     css: "styles.css"
+    linkcolor: "#8631ad"
 ---
 
 **This documentation is in progress and may evolve in a near future... Sorry for the tips it may include !**
@@ -34,7 +35,7 @@ This Quarto document combines 2 programming languages : R for data processing, a
 
 # Data processing with R
 
-The entire R script can be found [here](https://github.com/rysebaert/climbing_paris/blob/main/script.R).
+The entire R script can be found [here](https://github.com/rysebaert/climbing_paris/blob/main/script.R). Geojson files resulting from the data processing are available in the [data-conso](https://github.com/rysebaert/climbing_paris/tree/main/data-conso) folder of github project repository. These files are directly imported in Observable notebooks for data visualization.    
 
 ## Data sources
 
@@ -50,9 +51,9 @@ Input data is not provided in the [GitHub repository](https://github.com/rysebae
 
 ## Map layout
 
-A bounding box of 5 km around Paris, without Bois de Boulogne et Bois de Vincennes for a better centering of the map layout.
+A bounding box of 5 km around Paris, without *Bois de Boulogne* and *Bois de Vincennes* for a better centering of the map layout around Paris.
 
-A second bounding box (10 km around Paris) is created to catch OpenStreetMap POI and IRIS in the neighbourhood of this study area and avoid "border effects" for the further calculation of travel-time indicators. 
+A second bounding box (10 km around Paris) is created to catch OpenStreetMap POI and IRIS in the neighbourhood of this study area and avoid "border effects" for the upcoming travel-time indicators calculations. 
 
 ```{r, eval = FALSE}
 # 1. Map layout preparation at IRIS scale (source IGN)----
@@ -185,7 +186,7 @@ poi <- st_transform(poi, 4326)
 
 The data preparation allows to prepare origins-destinations layers for travel-time calculation. Origins correspond to the IRIS layer (only type H : 2141 points). Destinations to artificial climbing areas (45 points).
 
-```{r, eval = TRUE, echo = FALSE, warning=FALSE}
+```{r, eval = TRUE, echo = FALSE, warning=FALSE, message=FALSE}
 library(sf)
 poi <- st_read("data-conso/poi.geojson", quiet = TRUE)
 iris <- st_read("data-conso/iris.geojson", quiet = TRUE)
@@ -196,7 +197,7 @@ iris <- st_transform(iris, 2154)
 com <- st_transform(com, 2154)
 ```
 
-```{r, eval = TRUE, out.width= "100%", warning=FALSE}
+```{r, eval = TRUE, , warning=FALSE}
 library(mapsf)
 
 # Extract centroids from IRIS dedicated to dwellings
@@ -243,21 +244,21 @@ mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022
 
 ## Travel-time calculations with OSRM
 
-We have now required origins and destinations required to compute travel-time calculations. The computation is realized using the `osrm` R package (@osrm). This package allows to compute routes, trips, isochrones and travel distances matrices (travel time and kilometric distance).
+We have now the origins and destinations required to compute travel-time calculations. The computation is realized using the `osrm` R package (@osrm). This package allows the computation of routes, trips, isochrones and travel distances matrices (travel time and kilometric distance).
 
 Considering that the input data are quite important (more than 2000 origin points and 48 destination points) and to avoid to overload the OSRM demo server, I have run my own instance of OSRM based on docker container. The procedure to implement this solution is explained in the [following documentation](https://github.com/Project-OSRM/osrm-backend#using-docker "Run OSRM with docker"), or more specifically for Windows [here](https://gist.github.com/AlexandraKapp/e0eee2beacc93e765113aff43ec77789 "How to set up your own OSRM backend with Docker on Windows").
 
 Once it is done, the connection to the rounting engine is operational locally (with the URL `http://localhost:5000/`\` for me). 
 
-With OSRM, it is possible to choose several profiles depending on the routing we want to use (car, bike, walking). In our case, we choose the bike profile: Cycling is a widespread practice (with public transport) for climbers to reach their activities. Moreover, it allows also to avoid to use the car profile, which underestimates the travel-time in metropolitan areas (trafic congestion not taken into account).
+With OSRM, it is possible to choose several profiles depending on the routing we want to use (car, bike, walking). In our case, we choose the bike profile: Cycling is a widespread practice (with public transport) for climbers to reach their activities in this kind of urban context. Moreover, it allows also to avoid to use the car profile, which underestimates the travel-time in metropolitan areas (trafic congestion not taken into account).
 
-The bicycle profile is described in the [github OSRM repository](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/bicycle.lua "OSRM bicycle profile"). Basically, the default speed is 15 km/h. It avoids the access to highways, reduce the driving speed by 30 % for unsafe roads. It is important to keep in mind that landforms (elevation) are not considered in the default profile. Some thoughts and solutions exist on the subject, using elevation rasters ([Liedman, 2022](https://www.liedman.net/2015/04/13/add-elevation-data-to-osrm/ "Adding elevation data to OSRM") ; [Mapbox, 2015](https://blog.mapbox.com/elevation-aware-routing-profiles-in-mapbox-directions-21e182a85165 "Elevation-aware routing profiles in Mapbox Directions")).
+The bicycle profile is described in the [github OSRM repository](https://github.com/Project-OSRM/osrm-backend/blob/master/profiles/bicycle.lua "OSRM bicycle profile"). Basically, the default speed is 15 km/h. It avoids the access to highways, reduce the driving speed by 30 % for unsafe roads. It is important to keep in mind that landforms (elevation) are not considered in the default profile. Some thoughts and solutions exist on the subject, using elevation rasters ([Liedman (2022)](https://www.liedman.net/2015/04/13/add-elevation-data-to-osrm/ "Adding elevation data to OSRM") ; [Mapbox (2015)](https://blog.mapbox.com/elevation-aware-routing-profiles-in-mapbox-directions-21e182a85165 "Elevation-aware routing profiles in Mapbox Directions")).
 
 ### IRIS to climbing areas
 
-The code below compute travel-time calculation between the geometric center of IRIS (`ori`) and artificial climbing areas (`dest`). It is done for all climbing structures and reproduced according to the type of climbing structure : private or associative structures. For associative structures, we distinguish the FSGT and FFME federations, who do not exactly the same goals in term of practice.
+The code below compute travel-time calculation between the geometric center of IRIS (`ori`) and artificial climbing areas (`dest`). It is done for all climbing structures and reproduced according to the type of climbing structure : private or associative structures. For associative structures, we distinguish the FSGT and FFME federations, that do not have exactly the same goals in term of practice.
 
-Resulting travel-time matrixes are exported in the [data-conso](https://github.com/rysebaert/climbing_paris/tree/main/data-conso) folder for other possible uses (and to avoid runing these calculations systematically).
+Resulting travel-time matrixes are exported in the [data-conso](https://github.com/rysebaert/climbing_paris/tree/main/data-conso) folder for other possible uses (and to avoid runing these important calculations systematically).
 
 ```{r, eval = FALSE}
 # 4. Origin - Destination calculation with OSRM ----
@@ -303,17 +304,17 @@ row.names(df4) <- as.character(ori$CODE_IRIS)
 write.csv(df4, "data-conso/bike-duration-fsgt.csv")
 ```
 
-This heavy matrix is then manipulated to extract for each IRIS the following information at IRIS level :
+This heavy matrix is then manipulated to extract for each IRIS the following information :
 
--   Name of the nearest climbing structure by bike
+-   Name of the nearest climbing structure by bike.
 
--   Type of structure (associative or speculative)
+-   Type of structure (associative or speculative).
 
--   Time to reach it (in minutes)
+-   Time to reach it (in minutes).
 
--   Number of artificial climbing areas at less than 15 minutes by bike (N)
+-   Number of artificial climbing areas at less than 15 minutes by bike (N).
 
-This calculation is done for all climbing structures (ALL), private ones (PRIV), the FFME federation (FFME) and the FSGT one (FSGT). It is done with R base code. A function would reduce considerably the code length... Never mind, it is not the aim of this proof ;)
+This calculation is done for all climbing structures (ALL), for private ones (PRIV), for those held by FFME federation (FFME) and for those held by the FSGT federation (FSGT). It is done with R base code. A function would reduce considerably the code length... Never mind, it is not the aim of this proof ;)
 
 ```{r, eval = FALSE}
 # 5. Accessibility indicator creation (IRIS) ----
@@ -444,11 +445,11 @@ iris <- merge(iris, osm_id, by = "CODE_IRIS", all.x = TRUE)
 
 ### Characterizing the POI neighbourhood
 
-Then, for each climbing areas, we are interested in defining the socio-economic characteristics of their neighbourhood.
+Then, the socio-economic neighbourhood of each climbing area is characterized.
 
 The previous matrix is transposed (lines \<\> columns). For each climbing structure, we extract the IRIS located at less than 15 minutes by bike and to produce the following indicators :
 
--   Total population at less than 15 minutes by bike. This can be considered as an amount of "social demand".
+-   Total population at less than 15 minutes by bike. This can be considered as an amount of "local social demand".
 
 -   Minimum, mean and maximum of median income of IRIS at less than 15 minutes by bike.
 
@@ -512,12 +513,12 @@ mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022
 
 ## Travel time isochrone Map
 
-Then, we are interested in building iscochrons of time-distance coming from climbing areas. This is done with the `potential` R package (@potential) and its function `equipotential`. Below are reminded the required steps to create polygons of equipotential from a regular grid of points :
+Moreover, we can be interested by defining the accessibility of climbing areas without taking into account any territorial division, which can introduce numerous bias, due to [MAUP](https://en.wikipedia.org/wiki/Modifiable_areal_unit_problem) effects. This is done by building iscochrons of equivalent time-distance coming from climbing areas. This is done with the `potential` R package (@potential) and its function `equipotential`. Below are reminded the required steps to create polygons of equipotential from a regular grid of points :
 
-- Create a regular grid (150 resolution in our case) and extract the centroids. 
+- Create a regular grid (150m resolution in our case) and extract the centroids. 
 - Compute travel time indicators with the `osrmtable` function of the `osrm` R package, from grid centroids to climbing areas. 
-- Get the minimum value of the resulting matrix and join the result to the regular grid layer
-- Create polygons of equipotential, by defining the desired thresholds and the indicator we are interested in (which climbing area travel-time) 
+- Get the minimum value of the resulting matrix and join the result to the regular grid layer.
+- Create polygons of equipotential, by defining the desired thresholds and the indicator we are interested in (which climbing area travel-time). 
 
 ```{r, eval = FALSE}
 ## 4.3 Isochrones from a regular grid to climbing areas ----
@@ -574,6 +575,8 @@ iso_priv <- equipotential(x = mygrid, var = "TIME_PRIV", breaks = thr,  mask = p
 
 ### Output
 
+The map below displays the location of the climbing areas in the study area (white dots), the travel-time by bike required to reach each points of the 150m regular grid (little dots) and the isochrones deducted from these values. 
+
 ```{r, eval = TRUE, echo = FALSE, warning=FALSE}
 library(sf)
 iso_all <- st_read("data-conso/iso_all.geojson", quiet = TRUE)
@@ -609,6 +612,19 @@ mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022
 
 ## OSRM climbing trip
 
+
+```{r, echo = FALSE}
+library(sf)
+trip  <- st_read("data-conso/trip.geojson", quiet = TRUE)
+poi <- st_read("data-conso/poi.geojson", quiet = TRUE)
+dest_fsgt <- poi[poi$federation == "FSGT",]
+```
+
+
+`osrmTrip` is a function from the `osrm` package (@osrm) which allows to get the travel geometry between multiple unordered points. The output is a sf LINESTRING with 2 components : duration (in minutes) and distance (in kilometers).
+
+This function is applied to the climbing areas held by the FSGT federation. 
+
 ```{r, eval = FALSE}
 dest_fsgt <- st_transform(dest_fsgt, 2154)
 dest_fsgt <- st_intersection(dest_fsgt, paris_5k)
@@ -618,17 +634,7 @@ trip <- osrmTrip(loc = dest_fsgt)
 trip <- trip[[1]]$trip
 ```
 
-
-```{r, echo = FALSE}
-trip  <- st_read("data-conso/trip.geojson", quiet = TRUE)
-dest_fsgt <- poi[poi$federation == "FSGT",]
-```
-
-
-```{r, eval = TRUE}
-sum(trip$distance)
-sum(trip$duration)
-```
+To reach the `r nrow(dest_fsgt)` climbing areas of the FSGT federation located in the study area, the osrmTrip function returns that the fastest cycling trip around these climbing areas can be done in `r sum(trip$duration)` minutes and `r sum(trip$distance)` kilometres.    
 
 ```{r, eval = TRUE}
 library(maptiles)
@@ -640,7 +646,7 @@ mf_raster(osm)
 mf_map(trip, lwd = 4, add = TRUE, col = "blue")
 mf_map(trip, lwd = 1, col = "white", add = TRUE)
 mf_map(dest_fsgt, pch = 20, col = "red", add = TRUE)
-mf_title("osrmRoute()")
+mf_title("Fastest cycling trip to reach all FSGT climbing areas")
 mf_credits(get_credit("OpenStreetMap"), pos = "bottomright", cex = .8, 
            bg = "#ffffff80")
 ```
@@ -701,8 +707,7 @@ st_write(iso_fsgt, "data-conso/iso_fsgt.geojson")
 st_write(iso_priv, "data-conso/iso_priv.geojson")
 
 # Export material related to travel-trip
-
-
+st_write(trip, "data-conso/trip.geojson")
 ```
 
 
@@ -741,6 +746,10 @@ iris = FileAttachment("data-conso/iris.geojson").json()
 poi = FileAttachment("data-conso/poi.geojson").json()
 com = FileAttachment("data-conso/com.geojson").json()
 iris15 = FileAttachment("data-conso/iris15.geojson").json()
+iso_all = FileAttachment("data-conso/iso_all.geojson").json()
+iso_priv = FileAttachment("data-conso/iso_priv.geojson").json()
+iso_fsgt = FileAttachment("data-conso/iso_fsgt.geojson").json()
+trip = FileAttachment("data-conso/trip.geojson").json()
 ```
 
 Bertin.js (@bertin) and geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
@@ -1063,9 +1072,9 @@ map2 = bertin.draw({
 })
 ```
 
-## Time to climb
+## Time to climb (IRIS)
 
-It displays the time by bike required to reach the nearest climbing area, for all structures or by manager type. 
+It displays the time by bike required to reach the nearest climbing area, for all structures or by manager type and from each IRIS centroids.  
 
 ```{ojs}
 // Map parameters to play with it
@@ -1186,6 +1195,106 @@ map3 = bertin.draw({
 })
 ```
 
+## Time to reach climbing areas (isochrones)
+
+It shows with isochrones the area reachable from the network of climbing areas by bike in minutes. It is possible to see all climbing areas (default map) or filter by manager (private or FSGT).
+
+```{ojs}
+// Map parameters to play with it
+// select indicator
+viewof ind7 = Inputs.radio([iso_all, iso_priv, iso_fsgt], {format: x => x.name, value: iso_all})
+
+map7 = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+
+  layers: [
+    {
+      type: "layer",
+      geojson: poi,
+      symbol_size: 100,
+      symbol: "circle",
+      fill: "white",
+      strokeWidth: 2.5,
+      stroke: {
+        type: "typo",
+        values: "federation",
+        colors: ["#9990f0", "#fcb456", "#ba0b25"]
+      },
+      tooltip: {
+        fields: ["$name", "$federation"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10],
+        col: "white"
+      }
+    },
+    {
+      type: "text",
+      position: "topright",
+      text: "Climbing nebula",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "black",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "black",
+      fill: "none"
+    },
+
+    {
+      type: "layer",
+      geojson: ind7,
+      strokeWidth: 0,
+      fill: {
+        type: "choro",
+        values: "center",
+        breaks: [0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, 47],
+        colors: [
+          "#7F000D",
+          "#A1494D",
+          "#BE7D7F",
+          "#D4ABAD",
+          "#E6D4D5",
+          "#F1F1F1",
+          "#F6FBF4",
+          "#D5EECD",
+          "#A1D298",
+          "#5BAD58"
+        ],
+        leg_round: 2,
+        leg_title: `Time to reach\nthe nearest climbing area\nBy bike (minutes)`,
+        leg_x: 15,
+        leg_y: 15,
+        col_missing: "lightgrey",
+        txt_missing: "Non dedicated to housing"
+      }
+    },
+
+    {
+      type: "scalebar",
+      units: "kilometers"
+    },
+
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
+
 ## Climbing in 15 minutes?
 
 The number of climbing areas reachable in 15 minutes by bike from the geometric centroid of each IRIS of the study area.
@@ -1290,6 +1399,132 @@ map4 = bertin.draw({
       units: "miles",
     },
     
+    {
+      type: "footer",
+      text:
+        "Sources: (c)OpenStreetMap and contributors, INSEE, IGN, 2022\nRealisation: Ronan Ysebaert, 2022"
+    }
+  ]
+})
+```
+
+## Climbing / biking tour ! 
+
+It shows the fastest path to visit all the FSGT's climbing areas by bike. To overcome this challenge, you will have to cycle for 88.39 km and 7.02 hours !
+
+```{ojs}
+// Map parameters to play with it
+// select indicator
+viewof ind8 = Inputs.radio(["duration", "distance"], {
+  label: "Choose bike trip indicator",
+  value: "duration"
+})
+
+// Discretization method
+viewof method8 = Inputs.select(["jenks", "q6", "quantile", "equal", "msd"], {
+  label: "method",
+  value: "equal"
+})
+
+// Filter FSGT climbing areas only
+fsgt = bertin.subgeo({
+  geojson: poi,
+  field: "federation",
+  operator: "==",
+  array: "FSGT"
+})
+
+// Color palette
+viewof pal8 = Inputs.select(
+  ["Reds", "Blues", "Greens", "Greys", "Oranges", "Purples", "BuGn", "BuPu", "GnBu",
+  "OrRd", "PuBuGn", "PuBu", "PuRd", "RdPu", "YlGnBu", "YlGn", "YlOrBr", 
+  "YlOrRd", "BrBG", "PRGn", "PiYG", "PuOr", "RdBu", "RdGy", "RdYlBu", "RdYlGn",
+  "Spectral"
+  ],
+  {
+    label: "colors",
+    value: "Reds"
+  }
+)
+
+
+// Resulting map with a lot of things :) 
+map8 = bertin.draw({
+  params: {
+    width: 750,
+    projection: lambert93,
+    extent: com
+  },
+  layers: [
+    {
+      geojson: fsgt,
+      symbol_size: 100,
+      symbol: "circle",
+      fill: "white",
+      strokeWidth: 2.5,
+      stroke: "#ba0b25",
+
+      tooltip: {
+        fields: ["$name", "$federation"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      type: "text",
+      position: "topright",
+      text: "The FSGT's\nbiking / climbing tour !",
+      frame_opacity: 0.7,
+      baseline: "hanging",
+      fill: "white",
+      fontSize: 25,
+      margin: 4,
+      fontWeight: "bold",
+      fontFamily: "Ubuntu"
+    },
+
+
+    {
+      geojson: trip,
+      strokeWidth: 4,
+      stroke: {
+        type: "choro",
+        values: ind8,
+        method: method8,
+        nbreaks: 4,
+        colors: pal8,
+        leg_title: `Time (minutes) or distance (kilometres)\nbetween 2 climbing areas !`,
+        leg_x: 15,
+        leg_y: 15,
+        leg_txtcol: "white",
+        leg_round:0
+      },
+
+      tooltip: {
+        fields: ["$duration","minutes", "$distance", "kilometers"],
+        fill: ["black", "black"],
+        fontWeight: ["bold", "normal"],
+        fontSize: [12, 10, 12, 10],
+        col: "white"
+      }
+    },
+
+    {
+      type: "layer",
+      geojson: com,
+      stroke: "white",
+      fill: "black"
+    },
+    
+    {
+      type: "scalebar",
+      units: "kilometers",
+      fill: "white"
+    },
+
     {
       type: "footer",
       text:

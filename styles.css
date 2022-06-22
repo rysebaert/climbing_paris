@@ -6,3 +6,16 @@ td {
 table{
   font-size: 0.6rem;
 }
+
+
+a {
+  color: #8631ad;
+  text-decoration: none;
+}
+  a:hover {
+    color: #8631ad;
+    text-decoration: underline}
+  a:visited {
+    color: #8631ad; }
+  a:visited:hover {
+    color: #8631ad; }
