@@ -7,7 +7,7 @@ author:
     affiliation: UAR RIATE, Université Paris Cité, CNRS
     affiliation-url: https://riate.cnrs.fr/
 citation: true
-date: "June 2022"
+date: "July 2022"
 bibliography: bib.bib
 format:
   html:
@@ -20,8 +20,6 @@ format:
     css: "styles.css"
     linkcolor: "#8631ad"
 ---
-
-**This documentation is in progress and may evolve in a near future... Sorry for the tips it may include !**
 
 The aim of this document consists in showing how to build, visualize and reproduce accessibility indicators by combining points of interest (POI) coming from the OpenStreetMap database, socio-economic indicators included in small territorial division (IRIS) and routing engines (OSRM).
 
@@ -1779,7 +1777,7 @@ map6 = bertin.draw({
 
 ## Extend the analysis
 
-This methodological example showed a general methodology to combine institutional and crowd-sourced data to develop some simple indicators of accessibility to services of interest using open-source routing engines, and disseminate this with data visualizations frameworks. It is one possible implementation, among others. Other implementations could easily be envisaged. 
+This methodological example showed a general methodology to combine institutional and crowd-sourced data to develop some simple indicators of accessibility to services of interest using open-source routing engines, and disseminate this with data visualizations frameworks. It is one possible implementation, among others. Other implementations could easily be envisaged, such as: 
 
 - **Geographical coverage**: The data preparation process presented above requires the definition of a geographical bounding box to extract OpenStreetMap points of interest (destinations of travel-time calculations) and an existing territorial division (the centroids being the origins of the travel-time calculations). This could be easily extented to other areas of interest, by modifying the Xmin, Xmax, Ymin and Ymax of the bounding box, or using other territorial divisions (a regular grid, for instance). The important things to consider is  
 - **Use other points of interest**:  This example used the OpenStreetMap tag defined by the key-value `sport=climbing`. Other [map features](https://wiki.openstreetmap.org/wiki/Map_features) could be investigated, such as [amenities](https://wiki.openstreetmap.org/wiki/Key:amenity), [tourism facilities](https://wiki.openstreetmap.org/wiki/Map_features#Tourism) or [shops](https://wiki.openstreetmap.org/wiki/Map_features#Shop). The only element to consider is the geometric reference of the object in the OpenStreetMap database ; it could be nodes, ways or relations. In the case of sport=climbing tag, the [OpenStreetMap Wiki](https://wiki.openstreetmap.org/wiki/Tag%3Asport%3Dclimbing) reminds that *sport=climbing should preferably applied to nodes for artificial climbing walls*, our case. If the tag combines nodes and areas, it requires also to extract polygons responding to the tag and transform it into points, checking if the information is not included twice in the OpenStreetMap database.   
@@ -1788,8 +1786,7 @@ This methodological example showed a general methodology to combine institutiona
 
 ## Usage precautions
 
-One persisting criticism made to OpenStreetMap is its lack of quality, mainly due to its general and contributive organisations implying a high heterogeneity of contribution practices. Known problems are due to [geometric accuracy](https://wiki.openstreetmap.org/wiki/Accuracy) (geographical positioning of OSM objects), completeness
-[accuracy](https://wiki.openstreetmap.org/wiki/Accuracy) and [completeness](https://wiki.openstreetmap.org/wiki/Completeness) (missing information, not up-to-date) or problems due to the [tags](https://wiki.openstreetmap.org/wiki/Category:Tagging_Mistakes) describing OSM objects (missing important tags, bad practices). 
+One persisting criticism made to OpenStreetMap is its lack of quality, mainly due to its collaborative aspect implying *de facto* a high heterogeneity of contribution practices. Known problems refer to [geometric accuracy](https://wiki.openstreetmap.org/wiki/Accuracy) (geographical positioning of OSM objects),  [accuracy](https://wiki.openstreetmap.org/wiki/Accuracy), [completeness](https://wiki.openstreetmap.org/wiki/Completeness) (missing points, not up-to-date) or problems due to the [tags](https://wiki.openstreetmap.org/wiki/Category:Tagging_Mistakes) describing OSM objects (missing important tags, bad practices). 
 
 In that case, I made a personal survey to complete missing information (around 30 % of the information was missing) in OpenStreetMap database. It meant add some missing points in some cases, and in others to describe it with [relevant climbing tags](https://wiki.openstreetmap.org/wiki/Climbing) identified in the OpenStreetMap Wiki. At the end, it is sure that the input information is not perfect and would require double-checks by the community, but we can argue that it was not worst than in the begginning. 
 
