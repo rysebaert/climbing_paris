@@ -489,7 +489,7 @@ library(mapsf)
 # Create the map
 mf_init(com, expandBB = c(0,0.4,0,0), theme = my_theme)
 
-cols <- mf_get_pal(n = c(5,5), pal = c("Reds 2", "Greens"))
+cols <- mf_get_pal(n = 10, pal = "RdYlGn", rev = TRUE)
 thr <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, max(iris$ALL_TIME, na.rm = TRUE))
 
 mf_choro(
@@ -499,9 +499,10 @@ mf_choro(
   leg_title = "Nearest climbing area\n(all structures, minutes)", 
   col_na = "lightgrey", leg_no_data = "No dedicated to housing", add = TRUE)
 
-mf_map(x = poi, pch = 21, cex = .9, bg = "black", add = TRUE)
-
+mf_map(x = poi, pch = 21, cex = .9, bg = "white", add = TRUE)
 mf_map(com, col = NA, border = "black", add = TRUE)
+mf_label(x = poi, var = "name", cex = .4, halo = TRUE, overlap = FALSE, 
+         bg = "#ffffff80", pos = 4, add = TRUE)
 
 mf_title("Time to reach the nearest climbing area")
 mf_scale(size = 5, col = "black", pos = "bottomright")
@@ -512,12 +513,12 @@ mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022
 
 ## Travel time isochrones
 
-Moreover, we can be interested by defining the accessibility of climbing areas without taking into account any territorial division, which can introduce numerous bias, due to [MAUP](https://en.wikipedia.org/wiki/Modifiable_areal_unit_problem) effects. This is done by building isochrones of equivalent time-distance coming from climbing areas, using the `potential` R package (@potential) and its function `equipotential`. Below are reminded the required steps to create polygons of equipotential from a regular grid of points :
+Moreover, we can be interested by defining the accessibility of climbing areas without taking into account any territorial division, which can introduce numerous bias, due to [MAUP](https://en.wikipedia.org/wiki/Modifiable_areal_unit_problem) effects. This is done by building isochrones of equivalent time-distance coming from climbing areas, using the `mapiso` R package (@mapiso). Below are reminded the required steps to create polygons of equipotential from a regular grid of points :
 
 - Create a regular grid (150m resolution in our case) and extract the centroids. 
 - Compute travel time indicators with the `osrmtable` function of the `osrm` R package, from grid centroids to climbing areas. 
 - Get the minimum value of the resulting matrix and join the result to the regular grid layer.
-- Create polygons of equipotential, by defining the desired thresholds and the indicator we are interested in (which climbing area travel time). 
+- Create polygons with `mapiso` function, wich takes the resulting values included in the regular grid. The function takes the desired thresholds and the indicator we are interested in (which climbing area travel time).  
 
 ```{r, eval = FALSE}
 ## 4.3 Isochrones from a regular grid to climbing areas ----
@@ -563,18 +564,16 @@ mygrid <- merge(mygrid, time, by = "ID", all.x = TRUE) # merge time to grid
 
 # Compute isochrones
 # define breaks (based on quantile analysis)
-library(potential)
-
+library(mapiso)
 thr <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, max(mygrid$TIME_FSGT))
-iso_all <- equipotential(x = mygrid, var = "TIME_ALL", breaks = thr,  mask = paris5k)
-iso_fsgt <- equipotential(x = mygrid, var = "TIME_FSGT", breaks = thr,  mask = paris5k)
-iso_priv <- equipotential(x = mygrid, var = "TIME_PRIV", breaks = thr,  mask = paris5k)
-
+iso_all <- mapiso(x = mygrid, var = "TIME_ALL", breaks = thr, mask = paris5k)
+iso_fsgt <- mapiso(x = mygrid, var = "TIME_FSGT", breaks = thr,  mask = paris5k)
+iso_priv <- mapiso(x = mygrid, var = "TIME_PRIV", breaks = thr,  mask = paris5k)
 ```
 
 ### Output
 
-The map below displays the location of the climbing areas in the study area (white dots), the travel-time by bike required to reach each points of the 150m regular grid (little dots colours) and the isochrones deducted from these values. 
+The maps below display the location of the climbing areas in the study area (white dots), the travel-time by bike required to reach each points from the 150m regular grid (dot map) and the resulting isochrones deducted from these values. 
 
 ```{r, eval = TRUE, echo = FALSE, warning=FALSE}
 library(sf)
@@ -586,24 +585,31 @@ iso_all <- st_transform(iso_all, 2154)
 
 ```{r, eval = TRUE, out.width= "100%", warning=FALSE}
 # thresholds, colours and background colours
-thr <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, max(mygrid$TIME_FSGT))
-cols <- mf_get_pal(n = c(5,5), pal = c("Reds 2", "Greens"))
-colsbg <- paste0(cols, "80")
+thr <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, max(mygrid$TIME_ALL))
 
-# Show impact
+# Map input grid
 mf_init(com, expandBB = c(0,0.4,0,0), theme = my_theme)
-mf_map(iso_all, var = "center", type = "choro", breaks = thr, pal = colsbg, 
-       border = NA, leg_pos = c(631000, 6872000), 
-       leg_title = "Time to reach\nthe nearest climbing area\nfrom a 150m regular grid centroids",
-       add = TRUE)
-mf_map(mygrid, var = "TIME_ALL", pch = 21, cex = .2, border = NA,
-       type = "choro", breaks = thr, pal = cols, leg_pos = "n", add = TRUE)
+mf_map(mygrid, var = "TIME_ALL", pch = 21, cex = .4, border = NA,
+       type = "choro", breaks = thr, pal = cols, leg_pos = c(631000, 6872000), 
+       leg_title = "Time to reach\nthe nearest climbing area\nfrom a 150m regular\ngrid centroids",
+       add = TRUE) 
 mf_map(poi, pch = 21, add = TRUE)
-mf_map(com, col = NA, add = TRUE)
-
-mf_title("Isochrones output from a travel-time calculation grid centroids - climbing areas")
+mf_title("Isochrones input : travel time from a 150 m regular grid")
 mf_scale(size = 5, col = "black", pos = "bottomright")
-mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, INSEE, 2022\n",
+mf_credits(paste0("Sources : © OpenStreetMap and Contributors, 2022\n",
+                  "Realisation : Ronan Ysebaert, 2022"))
+
+# Map resulting isochrones
+mf_init(com, expandBB = c(0,0.4,0,0), theme = my_theme)
+mf_map(iso_all, var = "isomin", type = "choro", breaks = thr, pal = cols, 
+       border = NA, leg_pos = c(631000, 6872000), 
+       leg_title = "Time to reach\nthe nearest climbing area\nby bike",
+       add = TRUE)
+mf_map(com, col = NA, add = TRUE)
+mf_map(poi, pch = 21, add = TRUE)
+mf_title("Isochrones output : transformation of regularly spaced grids into contour polygons")
+mf_scale(size = 5, col = "black", pos = "bottomright")
+mf_credits(paste0("Sources : © OpenStreetMap and Contributors, IGN, 2022\n",
                   "Realisation : Ronan Ysebaert, 2022"))
 ```
 

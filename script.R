@@ -203,18 +203,18 @@ com <- st_transform(com, 2154)
 
 # Compute isochrones
 # define breaks (based on quantie analysis)
-library(potential)
-
+# library(devtools) this package will be soon available on the CRAN
+# remotes::install_github("riatelab/mapiso") installation from the github repository before that
+library(mapiso)
 thr <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, max(mygrid$TIME_FSGT))
-iso_all <- equipotential(x = mygrid, var = "TIME_ALL", breaks = thr,  mask = paris5k)
-iso_fsgt <- equipotential(x = mygrid, var = "TIME_FSGT", breaks = thr,  mask = paris5k)
-iso_priv <- equipotential(x = mygrid, var = "TIME_PRIV", breaks = thr,  mask = paris5k)
+iso_all <- mapiso(x = mygrid, var = "TIME_ALL", breaks = thr, mask = paris5k)
+iso_fsgt <- mapiso(x = mygrid, var = "TIME_FSGT", breaks = thr,  mask = paris5k)
+iso_priv <- mapiso(x = mygrid, var = "TIME_PRIV", breaks = thr,  mask = paris5k)
 
 # Transform in 4326 for observable integration
 iso_all <- st_transform(iso_all, 4326)
 iso_fsgt <- st_transform(iso_fsgt, 4326)
 iso_priv <- st_transform(iso_priv, 4326)
-
 
 ## 4.3 A bike trip to visit all the FSGT climbing areas ? ----
 # Keep only climbing areas in the study area
