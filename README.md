@@ -12,7 +12,7 @@ The aim of this repository consists in showing how to build, visualize and repro
 ### Usage
 For further uses, core files of this repository are the following. 
 
-- index.html: the main methodological document, distributed [here](https://rysebaert.github.io/climbing_paris/))
+- index.html: the main methodological document, distributed [here](https://rysebaert.github.io/climbing_paris/).
 - [index.qmd](https://github.com/rysebaert/climbing_paris/blob/main/index.qmd): the Quarto document created to build the html file.
 - [script.R](https://github.com/rysebaert/climbing_paris/blob/main/script.R): The entire R script created to build the output files used for data visualization.
 - [script_docker.txt](https://github.com/rysebaert/climbing_paris/blob/main/script_docker.txt) : the script I run on my computer to run my own instance of OSRM. 
@@ -22,7 +22,7 @@ For further uses, core files of this repository are the following.
 
 This folder includes all the files useful to produce the data visualizations, and intermediate files useful to avoid to compute at everytimes heave calcualtions. 
 
-#### Geojson files used in the data visualization. 
+#### Geojson files used in the data visualization 
 
 - com.geojson: municipality layer.
 - iris.geojson: IRIS layer (below the municipality level), with accessibility indicators
@@ -33,7 +33,7 @@ This folder includes all the files useful to produce the data visualizations, an
 
 All these layers are in latitude / longitude (WGS84). The attributes they include are further described in the Quarto document or in an [Observable notebook](https://observablehq.com/@rysebaert/dataset-presentation-accessibility?collection=@rysebaert/climbing_paris).
 
-### Intermediate files
+#### Intermediate files
 
 - bike-duration.csv : travel time by bike between each IRIS centroid and climbing areas (all climbing areas, held by the FFME or FSGT federations only, or managed by a private brand).
 - grid-bike-duration.csv : same file than above, but from a 150 m regular grid centroids. Time distance to FFME climbing areas are not calculated here.
@@ -47,4 +47,18 @@ You are free to:
 * Share — copy and redistribute the material in any medium or format
 * Adapt — remix, transform, and build upon the material for any purpose, even commercially.
 
-This license is acceptable for Free Cultural Works. The licensor cannot revoke these freedoms as long as you follow the license term
+This license is acceptable for Free Cultural Works. The licensor cannot revoke these freedoms as long as you follow the license term.
+
+### Citation
+
+@online{ysebaert2022,
+  author = {Ronan Ysebaert},
+  title = {Travel Time Calculation with {R} and Data Visualization with
+    {Observable}},
+  date = {2022-07},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/rysebaert/climbing_paris}},
+  url = {https://rysebaert.github.io/climbing_paris/},
+  langid = {en}
+}
