@@ -51,6 +51,7 @@ This license is acceptable for Free Cultural Works. The licensor cannot revoke t
 
 ### Citation
 
+```
 @online{ysebaert2022,
   author = {Ronan Ysebaert},
   title = {Travel Time Calculation with {R} and Data Visualization with
@@ -62,3 +63,4 @@ This license is acceptable for Free Cultural Works. The licensor cannot revoke t
   url = {https://rysebaert.github.io/climbing_paris/},
   langid = {en}
 }
+```
