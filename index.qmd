@@ -760,7 +760,7 @@ trip = FileAttachment("data-conso/trip.geojson").json()
 Bertin.js (@bertin) and geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
 
 ```{ojs}
-bertin = require('bertin@0.9.16')
+bertin = require('bertin@0.9.8')
 view = require("geoverview@1.2").then((f) => f.view)
 ```
 
@@ -1263,26 +1263,15 @@ map7 = bertin.draw({
       strokeWidth: 0,
       fill: {
         type: "choro",
-        values: "center",
+        values: "isomin",
         breaks: [0, 2.5, 5, 7.5, 10, 12.5, 15, 20, 25, 30, 47],
-        colors: [
-          "#7F000D",
-          "#A1494D",
-          "#BE7D7F",
-          "#D4ABAD",
-          "#E6D4D5",
-          "#F1F1F1",
-          "#F6FBF4",
-          "#D5EECD",
-          "#A1D298",
-          "#5BAD58"
-        ],
-        leg_round: 2,
+        colors: ["#006228", "#3A8B3A", "#76B345", "#B4D66C", "#EAF3A3",
+        "#FAEDA9", "#F1C363", "#E98E00", "#DC4A00", "#A51122"],
+        leg_round: 1,
         leg_title: `Time to reach\nthe nearest climbing area\nBy bike (minutes)`,
         leg_x: 15,
         leg_y: 15,
         col_missing: "lightgrey",
-        txt_missing: "Non dedicated to housing"
       }
     },
 
