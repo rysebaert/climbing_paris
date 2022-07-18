@@ -760,8 +760,8 @@ trip = FileAttachment("data-conso/trip.geojson").json()
 Bertin.js (@bertin) and geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
 
 ```{ojs}
-bertin = require('bertin@0.9.8')
-view = require("geoverview@1.2").then((f) => f.view)
+bertin = require('bertin')
+view = require("geoverview").then((f) => f.view)
 ```
 
 
