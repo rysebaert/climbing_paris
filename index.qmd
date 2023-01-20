@@ -757,11 +757,12 @@ iso_fsgt = FileAttachment("data-conso/iso_fsgt.geojson").json()
 trip = FileAttachment("data-conso/trip.geojson").json()
 ```
 
-Bertin.js (@bertin) and geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
+Bertin.js (@bertin), geotoolbox.js (@geotoolbox) geoverview.js (@geoverview) libraries are imported. These libraries will be used for creating the maps. 
 
 ```{ojs}
 bertin = require('bertin')
 view = require("geoverview").then((f) => f.view)
+geotoolbox = require('geotoolbox')
 ```
 
 
@@ -1421,12 +1422,15 @@ viewof method8 = Inputs.select(["jenks", "q6", "quantile", "equal", "msd"], {
 })
 
 // Filter FSGT climbing areas only
-fsgt = bertin.subgeo({
-  geojson: poi,
-  field: "federation",
-  operator: "==",
-  array: "FSGT"
-})
+fsgt = geotoolbox.filter(poi, (d) => d.federation == "FSGT")
+
+
+//fsgt = bertin.subgeo({
+//  geojson: poi,
+//  field: "federation",
+//  operator: "==",
+//  array: "FSGT"
+//})
 
 // Colour palette
 viewof pal8 = Inputs.select(
