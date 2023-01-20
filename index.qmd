@@ -7,7 +7,7 @@ author:
     affiliation: UAR RIATE, Université Paris Cité, CNRS
     affiliation-url: https://riate.cnrs.fr/
 citation: true
-date: "July 2022"
+date: "`r Sys.Date()`"
 bibliography: bib.bib
 format:
   html:
